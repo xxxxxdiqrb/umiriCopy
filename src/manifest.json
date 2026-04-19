@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "tweetCopy",
+  "version": "0.0.1",
+  "description": "copy x post to clipborad",
+  "icons": {
+    "32": "icons/icon32.png",
+    "64": "icons/icon64.png"
+  },
+  "permissions": [
+    "activeTab",
+    "downloads",
+    "storage"
+  ],
+  "options_page": "options/index.html",
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "action": {
+    "default_popup": "popup/index.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://x.com/*"
+      ],
+      "js": [
+        "modules/html-to-image.min.js",
+        "content_scripts/tweetCopy.js"
+      ],
+      "css": [
+        "content_scripts/tweetCopy.css"
+      ]
+    }
+  ]
+}
