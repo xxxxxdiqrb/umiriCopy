@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { appState } from "../store";
-import { unmountAllSelectors } from "../composables/useTweetObserver";
+import { unmountAllSelectors, getSelectedArticleElements } from "../composables/useTweetObserver";
+import { copyTweet } from "../composables/useCopyTweet";
 
 const handleCancel = () => {
     appState.configBar.visible = false;
@@ -9,11 +10,39 @@ const handleCancel = () => {
     unmountAllSelectors();
 };
 
-const handleSubmit = () => {
-    appState.configBar.visible = false;
-    appState.selectMode.active = false;
-    appState.selectedArticles.clear();
-    unmountAllSelectors();
+const handleSubmit = async () => {
+    const articles = getSelectedArticleElements();
+    if (articles.length === 0) {
+        handleCancel();
+        return;
+    }
+
+    appState.loading.visible = true;
+    appState.loading.text = "正在复制";
+
+    try {
+        const copyString = await copyTweet(articles);
+        appState.actionBar.message = "资源获取完成";
+        appState.actionBar.buttonText = "复制内容";
+        appState.actionBar.handler = async () => {
+            const type = "text/html";
+            const blob = new Blob([copyString], { type });
+            const data = [new ClipboardItem({ [type]: blob })];
+            await navigator.clipboard.write(data);
+        };
+        appState.actionBar.visible = true;
+    } catch (e) {
+        appState.actionBar.message = "资源获取失败：" + String(e);
+        appState.actionBar.buttonText = "确定";
+        appState.actionBar.handler = null;
+        appState.actionBar.visible = true;
+    } finally {
+        appState.loading.visible = false;
+        appState.configBar.visible = false;
+        appState.selectMode.active = false;
+        appState.selectedArticles.clear();
+        unmountAllSelectors();
+    }
 };
 
 const handleToggleTranslate = () => {
@@ -29,8 +58,7 @@ const handleToggleCopyImages = () => {
 
 const handleToggleDownload = () => {
     appState.configBar.download = !appState.configBar.download;
-};
-</script>
+};</script>
 
 <template>
     <div v-if="appState.configBar.visible" class="config-bar-overlay" @click.self="handleCancel">
@@ -52,6 +80,10 @@ const handleToggleDownload = () => {
                 <button class="toggle-btn" :class="{ active: appState.configBar.download }" @click="handleToggleDownload">
                     <span class="toggle-indicator"></span>
                 </button>
+            </div>
+            <div class="config-item">
+                <span class="config-label">已选中推文</span>
+                <span class="config-value">{{ appState.selectedArticles.size }}</span>
             </div>
             <button class="cancel-btn" @click="handleCancel">取消</button>
             <button class="submit-btn" @click="handleSubmit">复制</button>
@@ -96,6 +128,12 @@ const handleToggleDownload = () => {
 
 .config-label {
     color: rgb(239, 243, 244);
+    font-size: 15px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.config-value {
+    color: rgb(113, 118, 123);
     font-size: 15px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }

@@ -1,6 +1,7 @@
 import { h, render, type VNode } from "vue";
 import { createElement } from "../../utils";
 import ArticleSelector from "../components/ArticleSelector.vue";
+import { appState } from "../store";
 
 const mountedSelectors: Map<string, { host: HTMLElement; vnode: VNode; article: HTMLElement }> = new Map();
 const borderElements: Map<string, HTMLElement> = new Map();
@@ -227,6 +228,20 @@ function handleMainChildListChange() {
     console.log("change");
     mountNewArticles();
     updateAllSelectorPositions();
+    
+    const currentArticleIds = new Set<string>();
+    const articleList = Array.from(document.querySelectorAll("article"));
+    for (const article of articleList) {
+        const articleEl = article as HTMLElement;
+        const id = getArticleId(articleEl);
+        currentArticleIds.add(id);
+    }
+    
+    for (const selectedId of appState.selectedArticles) {
+        if (!currentArticleIds.has(selectedId)) {
+            appState.selectedArticles.delete(selectedId);
+        }
+    }
 }
 
 export function mountSelectorsToAllArticles() {
@@ -265,4 +280,15 @@ export async function unmountAllSelectors() {
 
     const svgMask = document.getElementById("tweet-copy-svg-mask");
     if (svgMask) svgMask.remove();
+}
+
+export function getSelectedArticleElements(): HTMLElement[] {
+    const articles: HTMLElement[] = [];
+    for (const id of appState.selectedArticles) {
+        const selector = mountedSelectors.get(id);
+        if (selector) {
+            articles.push(selector.article);
+        }
+    }
+    return articles;
 }

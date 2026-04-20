@@ -44,7 +44,6 @@ async function buildAll() {
   console.log('Copying extension files...')
   
   copyDir(r('public/icons'), r('dist/icons'))
-  copyDir(r('public/modules'), r('dist/modules'))
   copyFile(r('src/manifest.json'), r('dist/manifest.json'))
   copyFile(r('src/background/service-worker.js'), r('dist/service-worker.js'))
 
