@@ -22,16 +22,10 @@ const handleSubmit = async () => {
 
     try {
         const copyString = await copyTweet(articles);
-        appState.actionBar.message = "资源获取完成";
-        appState.actionBar.buttonText = "复制内容";
-        appState.actionBar.handler = async () => {
-            const type = "text/html";
-            const blob = new Blob([copyString], { type });
-            const data = [new ClipboardItem({ [type]: blob })];
-            await navigator.clipboard.write(data);
-        };
-        appState.actionBar.visible = true;
+        appState.previewDialog.content = copyString;
+        appState.previewDialog.visible = true;
     } catch (e) {
+        console.log(e);
         appState.actionBar.message = "资源获取失败：" + String(e);
         appState.actionBar.buttonText = "确定";
         appState.actionBar.handler = null;
@@ -58,7 +52,8 @@ const handleToggleCopyImages = () => {
 
 const handleToggleDownload = () => {
     appState.configBar.download = !appState.configBar.download;
-};</script>
+};
+</script>
 
 <template>
     <div v-if="appState.configBar.visible" class="config-bar-overlay" @click.self="handleCancel">
