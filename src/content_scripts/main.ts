@@ -4,8 +4,16 @@ import { appState } from "./store";
 import { createElement } from "../utils";
 
 async function init() {
-    const options = (await chrome.storage.local.get("options")).options || {};
-    Object.assign(appState.options, options);
+    const stored = (await chrome.storage.local.get("options")).options;
+    if (stored?.providers?.length) {
+        const providers = stored.providers;
+        const defaultId = stored.defaultProviderId;
+        const provider = providers.find((p: any) => p.id === defaultId) || providers[0];
+        if (provider) {
+            const { apiKey, model, baseUrl, systemMessage, temperature, stream, maxTokens, topP } = provider;
+            Object.assign(appState.options, { apiKey, model, baseUrl, systemMessage, otherParam: { temperature, stream, maxTokens, topP } });
+        }
+    }
 
     const globalHost = createElement(`
             <div id="tweet-copy-app" style="
