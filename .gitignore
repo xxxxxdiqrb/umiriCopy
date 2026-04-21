@@ -3,3 +3,4 @@ dist/
 *.local
 .opencode/
 .vscode/
+.DS_Store

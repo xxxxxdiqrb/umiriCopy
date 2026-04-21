@@ -1,17 +1,30 @@
 import { createApp } from "vue";
 import App from "./App.vue";
-import { appState } from "./store";
+import { appState, applyProvider } from "./store";
 import { createElement } from "../utils";
+import type { ProviderConfig } from "../options/types";
 
 async function init() {
     const stored = (await chrome.storage.local.get("options")).options;
-    if (stored?.providers?.length) {
-        const providers = stored.providers;
-        const defaultId = stored.defaultProviderId;
-        const provider = providers.find((p: any) => p.id === defaultId) || providers[0];
-        if (provider) {
-            const { apiKey, model, baseUrl, systemMessage, temperature, stream, maxTokens, topP } = provider;
-            Object.assign(appState.options, { apiKey, model, baseUrl, systemMessage, otherParam: { temperature, stream, maxTokens, topP } });
+    if (stored?.providers) {
+        let providers: ProviderConfig[] = [];
+        if (Array.isArray(stored.providers)) {
+            providers = stored.providers;
+        } else if (typeof stored.providers === "object") {
+            providers = Object.values(stored.providers);
+        }
+        
+        if (providers.length > 0) {
+            const defaultId = stored.defaultProviderId;
+            
+            appState.providers = providers;
+            appState.defaultProviderId = defaultId;
+            appState.configBar.selectedProviderId = defaultId;
+            
+            const provider = providers.find((p) => p.id === defaultId) || providers[0];
+            if (provider) {
+                applyProvider(provider);
+            }
         }
     }
 

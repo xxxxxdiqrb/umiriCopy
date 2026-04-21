@@ -55,9 +55,8 @@ async function extractTweetTexts(articleList: HTMLElement[]): Promise<string> {
     if (textDivs.length === 0) return "";
 
     const textContents = textDivs.map((div) => extractTweetTextContent(div));
-    const copyType = (await chrome.storage.local.get("textCopyType")).textCopyType;
 
-    if (copyType == null || copyType) {
+    if (appState.configBar.translate) {
         appState.loading.text = "正在翻译文本";
         const translatedTexts = await Promise.all(textContents.map((text) => getOpenAITranslation(text)));
         return translatedTexts.join(TEXT_SEPARATOR);
@@ -96,8 +95,10 @@ export async function copyTweet(articleList: HTMLElement[]): Promise<string> {
     const screenshot = await captureScreenshots(articleList, tweetName);
     copyContentList.push(screenshot);
 
-    const images = await extractAllTweetImages(articleList, tweetName);
-    copyContentList.push(...images);
+    if (appState.configBar.copyImages) {
+        const images = await extractAllTweetImages(articleList, tweetName);
+        copyContentList.push(...images);
+    }
 
     await showVideo();
 

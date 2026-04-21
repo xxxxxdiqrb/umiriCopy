@@ -41,17 +41,32 @@ async function getBase64Image(url: string): Promise<string> {
   });
 }
 
+interface ProcessImageResult {
+  displaySrc: string;
+  originalSrc?: string;
+}
+
 async function processImage(
   data: { name: string; url: string },
   download: boolean,
-): Promise<string> {
+): Promise<ProcessImageResult> {
   if (download) {
-    return await getLocalImage([data]);
+    const localPath = await getLocalImage([data]);
+    if (data.url.startsWith("data:")) {
+      return { displaySrc: data.url, originalSrc: localPath };
+    }
+    try {
+      const base64 = await getBase64Image(data.url);
+      return { displaySrc: base64, originalSrc: localPath };
+    } catch {
+      return { displaySrc: localPath, originalSrc: localPath };
+    }
   }
   if (data.url.startsWith("data:")) {
-    return data.url;
+    return { displaySrc: data.url };
   }
-  return await getBase64Image(data.url);
+  const base64 = await getBase64Image(data.url);
+  return { displaySrc: base64 };
 }
 
 async function loadImage(src: string): Promise<HTMLImageElement> {
@@ -76,7 +91,10 @@ async function captureScreenshots(
   }
 
   const imageElements = await Promise.all(screenshots.map(loadImage));
-  const totalHeight = imageElements.reduce((sum, img) => sum + img.naturalHeight, 0);
+  const totalHeight = imageElements.reduce(
+    (sum, img) => sum + img.naturalHeight,
+    0,
+  );
   const maxWidth = Math.max(...imageElements.map((img) => img.naturalWidth));
 
   const canvas = document.createElement("canvas");
@@ -94,19 +112,17 @@ async function captureScreenshots(
   }
 
   const mergedBase64 = canvas.toDataURL("image/png");
-  const src = await processImage(
+  const result = await processImage(
     { name: `${tweetName}.jpg`, url: mergedBase64 },
     appState.configBar.download,
   );
-  return `<img src="${src}"/>`;
+  if (result.originalSrc) {
+    return `<img src="${result.displaySrc}" data-original-src="${result.originalSrc}"/>`;
+  }
+  return `<img src="${result.displaySrc}"/>`;
 }
 
-async function extractTweetImages(
-  divList: HTMLElement[],
-  tweetName: string,
-  startIndex: number,
-  totalCount: number,
-): Promise<string[]> {
+function getImgElementList(divList: HTMLElement[]): HTMLImageElement[] {
   const ariaLabelledbyDiv = divList.find((item) =>
     item.getAttribute("aria-labelledby"),
   );
@@ -123,7 +139,16 @@ async function extractTweetImages(
   )
     return [];
 
-  const imgElementList = Array.from(extraElement.querySelectorAll("img"));
+  return Array.from(extraElement.querySelectorAll("img"));
+}
+
+async function extractTweetImages(
+  divList: HTMLElement[],
+  tweetName: string,
+  startIndex: number,
+  totalCount: number,
+): Promise<string[]> {
+  const imgElementList = getImgElementList(divList);
   const images: string[] = [];
   let index = startIndex;
 
@@ -134,11 +159,15 @@ async function extractTweetImages(
     searchParam.set("name", ORIG_IMAGE_PARAM);
     const imgUrl = baseUrl + "?" + searchParam.toString();
 
-    const src = await processImage(
+    const result = await processImage(
       { name: `${tweetName}_${baseUrl.split("/").pop()}.jpg`, url: imgUrl },
       appState.configBar.download,
     );
-    images.push(`<img src="${src}"/>`);
+    if (result.originalSrc) {
+      images.push(`<img src="${result.displaySrc}" data-original-src="${result.originalSrc}"/>`);
+    } else {
+      images.push(`<img src="${result.displaySrc}"/>`);
+    }
   }
 
   return images;
@@ -156,15 +185,7 @@ async function extractAllTweetImages(
     const divList = Array.from(
       article.querySelectorAll("div"),
     ) as HTMLElement[];
-    const ariaLabelledbyDiv = divList.find((item) =>
-      item.getAttribute("aria-labelledby"),
-    );
-    const extraElement = ariaLabelledbyDiv?.children[0] as
-      | HTMLElement
-      | undefined;
-    if (extraElement) {
-      totalCount += extraElement.querySelectorAll("img").length;
-    }
+    totalCount += getImgElementList(divList).length;
   }
 
   for (const article of articleList) {

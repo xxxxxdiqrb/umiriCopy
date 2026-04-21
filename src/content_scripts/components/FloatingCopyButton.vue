@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { appState } from "../store";
+import { appState, refreshProvidersFromStorage } from "../store";
 import { mountSelectorsToAllArticles } from "../composables/useTweetObserver";
 
-const handleClick = () => {
+const handleClick = async () => {
+  await refreshProvidersFromStorage();
   appState.configBar.visible = true;
   appState.selectMode.active = true;
   mountSelectorsToAllArticles();

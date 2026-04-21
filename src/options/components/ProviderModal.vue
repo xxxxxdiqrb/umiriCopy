@@ -1,104 +1,141 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import type { ProviderConfig } from '../types'
+import { ref, computed } from "vue";
+import type { ProviderConfig, CustomVariable } from "../types";
 
 const props = defineProps<{
-  modelValue: boolean
-  provider: ProviderConfig | null
-  existingProviders: ProviderConfig[]
-}>()
+  modelValue: boolean;
+  provider: ProviderConfig | null;
+  existingProviders: ProviderConfig[];
+}>();
 
 const emit = defineEmits<{
-  'update:modelValue': [value: boolean]
-  save: [provider: ProviderConfig]
-}>()
+  "update:modelValue": [value: boolean];
+  save: [provider: ProviderConfig];
+}>();
 
-const isTesting = ref(false)
-const testResult = ref<{ success: boolean; message: string } | null>(null)
+const isTesting = ref(false);
+const testResult = ref<{ success: boolean; message: string } | null>(null);
 
-const formData = ref<ProviderConfig | null>(null)
+const formData = ref<ProviderConfig | null>(null);
 
 const isEditing = computed(() => {
-  if (!props.provider || !formData.value) return false
-  return props.existingProviders.some(p => p.id === props.provider?.id)
-})
+  if (!props.provider || !formData.value) return false;
+  return props.existingProviders.some((p) => p.id === props.provider?.id);
+});
 
-const modalTitle = computed(() => (isEditing.value ? '编辑配置' : '添加配置'))
+const modalTitle = computed(() => (isEditing.value ? "编辑配置" : "添加配置"));
 
 const closeModal = () => {
-  emit('update:modelValue', false)
-  testResult.value = null
-}
+  emit("update:modelValue", false);
+  testResult.value = null;
+};
+
+const parseValue = (value: string): string | number | boolean => {
+  if (value === "true") return true;
+  if (value === "false") return false;
+  const num = Number(value);
+  if (value !== "" && !isNaN(num)) return num;
+  return value;
+};
+
+const buildCustomVarsObject = (
+  vars: CustomVariable[],
+): Record<string, unknown> => {
+  const obj: Record<string, unknown> = {};
+  for (const v of vars) {
+    if (v.name.trim()) {
+      obj[v.name.trim()] = parseValue(v.value);
+    }
+  }
+  return obj;
+};
+
+const addVariable = () => {
+  if (!formData.value) return;
+  formData.value.customVariables.push({ name: "", value: "" });
+};
+
+const removeVariable = (index: number) => {
+  if (!formData.value) return;
+  formData.value.customVariables.splice(index, 1);
+};
 
 const testConfig = async () => {
-  if (!formData.value) return
+  if (!formData.value) return;
 
-  isTesting.value = true
-  testResult.value = null
+  isTesting.value = true;
+  testResult.value = null;
 
   try {
-    const { baseUrl, apiKey, model, systemMessage, temperature, stream, maxTokens, topP } =
-      formData.value
+    const { baseUrl, apiKey, model, systemMessage, customVariables } =
+      formData.value;
+    const customVars = buildCustomVarsObject(customVariables);
 
     const response = await fetch(`${baseUrl}/chat/completions`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model,
         messages: [
-          { role: 'system', content: systemMessage },
-          { role: 'user', content: '测试连接' }
+          { role: "system", content: systemMessage },
+          { role: "user", content: "测试连接" },
         ],
-        temperature,
-        stream,
-        max_tokens: maxTokens,
-        top_p: topP
-      })
-    })
+        ...customVars,
+      }),
+    });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.error?.message || `HTTP ${response.status}`)
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error?.message || `HTTP ${response.status}`);
     }
 
-    if (stream) {
-      const reader = response.body?.getReader()
+    const isStream = customVars.stream === true;
+    if (isStream) {
+      const reader = response.body?.getReader();
       if (reader) {
-        await reader.read()
-        reader.cancel()
+        await reader.read();
+        reader.cancel();
       }
     } else {
-      await response.json()
+      await response.json();
     }
 
-    testResult.value = { success: true, message: '连接成功！配置有效。' }
+    testResult.value = { success: true, message: "连接成功！配置有效。" };
   } catch (error) {
     testResult.value = {
       success: false,
-      message: error instanceof Error ? error.message : '连接失败'
-    }
+      message: error instanceof Error ? error.message : "连接失败",
+    };
   } finally {
-    isTesting.value = false
+    isTesting.value = false;
   }
-}
+};
 
 const save = () => {
-  if (!formData.value) return
-  emit('save', { ...formData.value })
-  closeModal()
-}
+  if (!formData.value) return;
+  emit("save", {
+    ...formData.value,
+    customVariables: [...formData.value.customVariables],
+  });
+  closeModal();
+};
 
 const onOpen = () => {
+  console.log(props.provider);
   if (props.provider) {
-    formData.value = { ...props.provider }
+    const customVariables = props.provider.customVariables || [];
+    formData.value = {
+      ...props.provider,
+      customVariables: Object.values(customVariables).map((v) => ({ ...v })),
+    };
   }
-  testResult.value = null
-}
+  testResult.value = null;
+};
 
-defineExpose({ onOpen })
+defineExpose({ onOpen });
 </script>
 
 <template>
@@ -109,9 +146,20 @@ defineExpose({ onOpen })
         <button class="btn-close" @click="closeModal">×</button>
       </div>
       <div class="modal-body">
+        <div
+          v-if="testResult"
+          class="test-result"
+          :class="testResult.success ? 'success' : 'error'"
+        >
+          {{ testResult.message }}
+        </div>
         <div class="form-group">
           <label>配置名称</label>
-          <input v-model="formData.name" type="text" placeholder="如: DeepSeek" />
+          <input
+            v-model="formData.name"
+            type="text"
+            placeholder="如: DeepSeek"
+          />
         </div>
         <div class="form-group">
           <label>API 地址</label>
@@ -123,62 +171,66 @@ defineExpose({ onOpen })
         </div>
         <div class="form-group">
           <label>API Key</label>
-          <input v-model="formData.apiKey" type="password" placeholder="sk-xxxxxxxx" />
+          <input
+            v-model="formData.apiKey"
+            type="password"
+            placeholder="sk-xxxxxxxx"
+          />
         </div>
         <div class="form-group">
           <label>模型</label>
-          <input v-model="formData.model" type="text" placeholder="deepseek-chat" />
+          <input
+            v-model="formData.model"
+            type="text"
+            placeholder="deepseek-chat"
+          />
         </div>
         <div class="form-group">
           <label>System Message</label>
           <textarea v-model="formData.systemMessage" rows="4"></textarea>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Temperature</label>
-            <input
-              v-model.number="formData.temperature"
-              type="number"
-              step="0.1"
-              min="0"
-              max="2"
-            />
+        <div class="form-group">
+          <label>自定义变量</label>
+          <div class="custom-variables">
+            <div
+              v-for="(_, index) in formData.customVariables"
+              :key="index"
+              class="variable-row"
+            >
+              <input
+                v-model="formData.customVariables[index].name"
+                type="text"
+                placeholder="变量名"
+                class="var-name"
+              />
+              <input
+                v-model="formData.customVariables[index].value"
+                type="text"
+                placeholder="变量值"
+                class="var-value"
+              />
+              <button class="btn-remove" @click="removeVariable(index)">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path
+                    d="M4 4L12 12M12 4L4 12"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </button>
+            </div>
+            <button class="btn-add-var" @click="addVariable">+ 添加变量</button>
           </div>
-          <div class="form-group">
-            <label>Top P</label>
-            <input
-              v-model.number="formData.topP"
-              type="number"
-              step="0.1"
-              min="0"
-              max="1"
-            />
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Max Tokens</label>
-            <input v-model.number="formData.maxTokens" type="number" min="1" />
-          </div>
-          <div class="form-group checkbox-group">
-            <label class="checkbox-label">
-              <input v-model="formData.stream" type="checkbox" />
-              启用 Stream
-            </label>
-          </div>
-        </div>
-
-        <div
-          v-if="testResult"
-          class="test-result"
-          :class="testResult.success ? 'success' : 'error'"
-        >
-          {{ testResult.message }}
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-outline" @click="testConfig" :disabled="isTesting">
-          {{ isTesting ? '测试中...' : '测试连接' }}
+        <button
+          class="btn btn-outline"
+          @click="testConfig"
+          :disabled="isTesting"
+        >
+          {{ isTesting ? "测试中..." : "测试连接" }}
         </button>
         <button class="btn btn-outline" @click="closeModal">取消</button>
         <button class="btn btn-primary" @click="save">保存</button>
@@ -212,13 +264,14 @@ $danger: rgb(244, 33, 46);
 }
 
 .modal {
+  display: flex;
+  flex-direction: column;
   background: $bg-white;
   border: 1px solid $border-color;
   border-radius: 16px;
   width: 90%;
   max-width: 500px;
   max-height: 90vh;
-  overflow: auto;
   animation: fadeIn 0.2s ease-out;
 }
 
@@ -264,6 +317,7 @@ $danger: rgb(244, 33, 46);
 
 .modal-body {
   padding: 20px;
+  overflow: auto;
 }
 
 .form-group {
@@ -277,9 +331,9 @@ $danger: rgb(244, 33, 46);
     margin-bottom: 6px;
   }
 
-  input[type='text'],
-  input[type='password'],
-  input[type='number'],
+  input[type="text"],
+  input[type="password"],
+  input[type="number"],
   textarea {
     width: 100%;
     padding: 10px 12px;
@@ -290,7 +344,9 @@ $danger: rgb(244, 33, 46);
     color: $text-primary;
     outline: none;
     box-sizing: border-box;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family:
+      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+      sans-serif;
 
     &:focus {
       border-color: $accent;
@@ -330,10 +386,82 @@ $danger: rgb(244, 33, 46);
   font-size: 14px;
   margin: 0;
 
-  input[type='checkbox'] {
+  input[type="checkbox"] {
     width: 18px;
     height: 18px;
     accent-color: $accent;
+  }
+}
+
+.custom-variables {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.variable-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+
+  .var-name,
+  .var-value {
+    flex: 1;
+    padding: 10px 12px;
+    font-size: 15px;
+    background: $bg-input;
+    border: 1px solid $border-color;
+    border-radius: 8px;
+    color: $text-primary;
+    outline: none;
+    font-family:
+      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+      sans-serif;
+
+    &:focus {
+      border-color: $accent;
+    }
+
+    &::placeholder {
+      color: $text-secondary;
+    }
+  }
+}
+
+.btn-remove {
+  background: none;
+  border: none;
+  color: $text-secondary;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s;
+
+  &:hover {
+    color: $danger;
+    background: rgba($danger, 0.1);
+  }
+}
+
+.btn-add-var {
+  background: none;
+  border: 1px dashed $border-color;
+  color: $text-secondary;
+  padding: 10px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+
+  &:hover {
+    border-color: $accent;
+    color: $accent;
   }
 }
 
@@ -372,7 +500,9 @@ $danger: rgb(244, 33, 46);
   border-radius: 9999px;
   background: transparent;
   transition: background-color 0.2s;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
 
   &:disabled {
     opacity: 0.5;
