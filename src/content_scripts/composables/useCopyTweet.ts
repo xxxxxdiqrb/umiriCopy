@@ -1,7 +1,7 @@
 import { appState } from "../store";
 import { sendChromeMessage, formatDateForFilename } from "../../utils";
 import { captureScreenshots, extractAllTweetImages } from "./tweetMedia";
-import { setVideoSize, initCorsVideoTemporaryStorage } from "./videoHandler";
+import { setVideoSize } from "./videoHandler";
 
 const TESTID_USER_NAME = "User-Name";
 const TESTID_TWEET_TEXT = "tweetText";
@@ -77,9 +77,7 @@ function getTweetName(article: HTMLElement, divList: HTMLElement[]): string {
 }
 
 export async function copyTweet(articleList: HTMLElement[]): Promise<string> {
-    const { hideVideo, showVideo } = initCorsVideoTemporaryStorage(articleList);
-    await setVideoSize(articleList);
-    await hideVideo();
+    const { removeOverlay } = await setVideoSize(articleList);
 
     const firstArticle = articleList[0];
     const divList = Array.from(firstArticle.querySelectorAll("div")) as HTMLElement[];
@@ -100,7 +98,7 @@ export async function copyTweet(articleList: HTMLElement[]): Promise<string> {
         copyContentList.push(...images);
     }
 
-    await showVideo();
+    await removeOverlay();
 
     return copyContentList.join("\n");
 }
