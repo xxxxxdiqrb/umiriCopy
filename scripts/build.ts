@@ -35,10 +35,16 @@ async function buildAll() {
     configFile: r('vite.config.ts')
   })
 
-  console.log('Building content script...')
+  console.log('Building Twitter content script...')
   
   await build({
-    configFile: r('vite.content.config.ts')
+    configFile: r('vite.twitter.config.ts')
+  })
+
+  console.log('Building Instagram content script...')
+  
+  await build({
+    configFile: r('vite.instagram.config.ts')
   })
 
   console.log('Copying extension files...')

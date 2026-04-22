@@ -1,5 +1,6 @@
-import { appState } from "../store";
-import { sendChromeMessage, formatDateForFilename } from "../../utils";
+import { appState } from "../../../shared/store";
+import { platformState } from "../platform";
+import { sendChromeMessage, formatDateForFilename } from "../../../shared/utils";
 import { captureScreenshots, extractAllTweetImages } from "./tweetMedia";
 import { setVideoSize } from "./videoHandler";
 
@@ -56,7 +57,7 @@ async function extractTweetTexts(articleList: HTMLElement[]): Promise<string> {
 
     const textContents = textDivs.map((div) => extractTweetTextContent(div));
 
-    if (appState.configBar.translate) {
+    if (platformState.configBar.translate) {
         appState.loading.text = "正在翻译文本";
         const translatedTexts = await Promise.all(textContents.map((text) => getOpenAITranslation(text)));
         return translatedTexts.join(TEXT_SEPARATOR);
@@ -93,7 +94,7 @@ export async function copyTweet(articleList: HTMLElement[]): Promise<string> {
     const screenshot = await captureScreenshots(articleList, tweetName);
     copyContentList.push(screenshot);
 
-    if (appState.configBar.copyImages) {
+    if (platformState.configBar.copyImages) {
         const images = await extractAllTweetImages(articleList, tweetName);
         copyContentList.push(...images);
     }

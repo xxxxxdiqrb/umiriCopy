@@ -1,4 +1,5 @@
-import { appState } from "../store";
+import { appState } from "../../../shared/store";
+import { platformState } from "../platform";
 import { toPng } from "html-to-image";
 
 const ORIG_IMAGE_PARAM = "orig";
@@ -114,7 +115,7 @@ async function captureScreenshots(
   const mergedBase64 = canvas.toDataURL("image/png");
   const result = await processImage(
     { name: `${tweetName}.jpg`, url: mergedBase64 },
-    appState.configBar.download,
+    platformState.configBar.download,
   );
   if (result.originalSrc) {
     return `<img src="${result.displaySrc}" data-original-src="${result.originalSrc}"/>`;
@@ -161,7 +162,7 @@ async function extractTweetImages(
 
     const result = await processImage(
       { name: `${tweetName}_${baseUrl.split("/").pop()}.jpg`, url: imgUrl },
-      appState.configBar.download,
+    platformState.configBar.download,
     );
     if (result.originalSrc) {
       images.push(`<img src="${result.displaySrc}" data-original-src="${result.originalSrc}"/>`);

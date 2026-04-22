@@ -18,8 +18,13 @@
   "content_scripts": [
     {
       "matches": ["https://x.com/*"],
-      "js": ["content_scripts/tweetCopy.js"],
-      "css": ["content_scripts/tweetCopy.css"]
+      "js": ["content_scripts/twitterCopy.js"],
+      "css": ["content_scripts/twitterCopy.css"]
+    },
+    {
+      "matches": ["https://www.instagram.com/*"],
+      "js": ["content_scripts/instagramCopy.js"],
+      "css": ["content_scripts/instagramCopy.css"]
     }
   ]
 }

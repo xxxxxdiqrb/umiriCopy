@@ -12,13 +12,6 @@ export interface AppState {
     buttonText: string;
     handler: (() => void) | null;
   };
-  configBar: {
-    visible: boolean;
-    translate: boolean;
-    copyImages: boolean;
-    download: boolean;
-    selectedProviderId: string | null;
-  };
   previewDialog: {
     visible: boolean;
     content: string;
@@ -46,13 +39,6 @@ export interface AppState {
 export const appState = reactive<AppState>({
   loading: { visible: false, text: "正在复制" },
   actionBar: { visible: false, message: "", buttonText: "确定", handler: null },
-  configBar: {
-    visible: false,
-    translate: true,
-    copyImages: true,
-    download: false,
-    selectedProviderId: null,
-  },
   previewDialog: { visible: false, content: "" },
   selectMode: { active: false },
   selectedArticles: new Set(),
@@ -118,7 +104,6 @@ export async function refreshProvidersFromStorage() {
     if (providers.length > 0) {
       const defaultId = stored.defaultProviderId;
       appState.defaultProviderId = defaultId;
-      appState.configBar.selectedProviderId = defaultId;
 
       const provider =
         providers.find((p) => p.id === defaultId) || providers[0];
@@ -127,11 +112,9 @@ export async function refreshProvidersFromStorage() {
       }
     } else {
       appState.defaultProviderId = null;
-      appState.configBar.selectedProviderId = null;
     }
   } else {
     appState.providers = [];
     appState.defaultProviderId = null;
-    appState.configBar.selectedProviderId = null;
   }
 }

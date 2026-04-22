@@ -1,4 +1,4 @@
-import { waitATick } from "../../utils";
+import { waitATick } from "../../../shared/utils";
 
 async function setVideoSize(articleList: HTMLElement[]) {
   const overlays: HTMLDivElement[] = [];

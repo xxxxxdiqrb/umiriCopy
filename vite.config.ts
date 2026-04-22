@@ -8,7 +8,9 @@ export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
-      '@': r('src')
+      '@': r('src'),
+      '@shared': r('src/shared'),
+      '@platforms': r('src/platforms')
     }
   },
   build: {

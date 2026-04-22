@@ -1,24 +1,25 @@
 <script setup lang="ts">
-import { appState, refreshProvidersFromStorage } from "../store";
-import { mountSelectorsToAllArticles } from "../composables/useTweetObserver";
+defineProps<{
+  label?: string;
+  icon?: string;
+}>();
 
-const handleClick = async () => {
-  await refreshProvidersFromStorage();
-  appState.configBar.visible = true;
-  appState.selectMode.active = true;
-  mountSelectorsToAllArticles();
-};
+const emit = defineEmits<{
+  click: [];
+}>();
 </script>
 
 <template>
   <div class="floating-btn-wrapper">
-    <button class="floating-copy-btn" @click="handleClick">
-      <svg viewBox="0 0 24 24" class="copy-icon" aria-hidden="true">
-        <path
-          d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"
-        />
-      </svg>
-      <span class="copy-text">复制</span>
+    <button class="floating-copy-btn" @click="emit('click')">
+      <slot name="icon">
+        <svg viewBox="0 0 24 24" class="copy-icon" aria-hidden="true">
+          <path
+            d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"
+          />
+        </svg>
+      </slot>
+      <span class="copy-text">{{ label || "复制" }}</span>
     </button>
   </div>
 </template>

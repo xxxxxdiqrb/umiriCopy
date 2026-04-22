@@ -5,6 +5,7 @@ import { appState } from "../store";
 const props = defineProps<{
   article: HTMLElement;
   articleId: string;
+  singleSelect?: boolean;
 }>();
 
 const articleId = props.articleId;
@@ -16,6 +17,9 @@ const handleClick = (e: MouseEvent) => {
   if (appState.selectedArticles.has(articleId)) {
     appState.selectedArticles.delete(articleId);
   } else {
+    if (props.singleSelect) {
+      appState.selectedArticles.clear();
+    }
     appState.selectedArticles.add(articleId);
   }
 };
