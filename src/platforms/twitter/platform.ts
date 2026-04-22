@@ -7,6 +7,7 @@ export const { platformState, configItems, updateConfig } = createPlatformStore(
 export const observer = createArticleSelectorObserver({
     prefix: "tweet-copy",
     articleIdPrefix: "article",
+    articleSelector: "article",
     getObserverTarget: () => {
         let currElement: HTMLElement | null = document.querySelector("article");
         while (currElement) {

@@ -3,20 +3,25 @@ import { createArticleSelectorObserver } from "../../shared/composables/createAr
 
 export const { platformState, configItems, updateConfig } = createPlatformStore();
 
-const detailArticleIds: Set<string> = new Set();
-
 export const observer = createArticleSelectorObserver({
     prefix: "instagram-copy",
     articleIdPrefix: "instagram-article",
+    articleSelector: () => {
+        if (document.querySelector('article[role="presentation"]')) {
+            return 'article[role="presentation"]';
+        }
+        return "article";
+    },
     singleSelect: true,
     getObserverTarget: () => document.querySelector("article")?.parentElement ?? null,
-    shouldSkipArticle: (article) => {
-        const isDetailView = article.getAttribute("role") === "presentation";
-        if (isDetailView) {
-            const id = article.dataset.selectorId;
-            if (id) detailArticleIds.add(id);
-            return true;
+    getAnchor: (article) => {
+        if (article.getAttribute("role") !== "presentation") {
+            return article.querySelector('div[aria-hidden="true"]');
+        } else {
+            // 太傻逼了，怎么要这样选择啊
+            const imgType = article.querySelector('div[role="button"]:has(img[srcset])');
+            const videoType = article.querySelector("video");
+            return (imgType || videoType || article) as HTMLElement | null;
         }
-        return false;
     },
 });

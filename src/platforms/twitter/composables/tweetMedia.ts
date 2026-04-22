@@ -1,74 +1,9 @@
 import { appState } from "../../../shared/store";
 import { platformState } from "../platform";
 import { toPng } from "html-to-image";
+import { processImage, formatImageHtml } from "../../../shared/utils";
 
 const ORIG_IMAGE_PARAM = "orig";
-
-async function getLocalImage(
-  data: { name: string; url: string }[],
-): Promise<string> {
-  return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage(
-      {
-        type: "downloadImageList",
-        data: data,
-      },
-      (response) => {
-        if (response.isSuccess) {
-          resolve(response.pathList[0]);
-        } else {
-          reject(response.reason);
-        }
-      },
-    );
-  });
-}
-
-async function getBase64Image(url: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage(
-      {
-        type: "fetchImageAsBase64",
-        url: url,
-      },
-      (response) => {
-        if (response.isSuccess) {
-          resolve(response.data);
-        } else {
-          reject(response.reason);
-        }
-      },
-    );
-  });
-}
-
-interface ProcessImageResult {
-  displaySrc: string;
-  originalSrc?: string;
-}
-
-async function processImage(
-  data: { name: string; url: string },
-  download: boolean,
-): Promise<ProcessImageResult> {
-  if (download) {
-    const localPath = await getLocalImage([data]);
-    if (data.url.startsWith("data:")) {
-      return { displaySrc: data.url, originalSrc: localPath };
-    }
-    try {
-      const base64 = await getBase64Image(data.url);
-      return { displaySrc: base64, originalSrc: localPath };
-    } catch {
-      return { displaySrc: localPath, originalSrc: localPath };
-    }
-  }
-  if (data.url.startsWith("data:")) {
-    return { displaySrc: data.url };
-  }
-  const base64 = await getBase64Image(data.url);
-  return { displaySrc: base64 };
-}
 
 async function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -117,10 +52,7 @@ async function captureScreenshots(
     { name: `${tweetName}.jpg`, url: mergedBase64 },
     platformState.configBar.download,
   );
-  if (result.originalSrc) {
-    return `<img src="${result.displaySrc}" data-original-src="${result.originalSrc}"/>`;
-  }
-  return `<img src="${result.displaySrc}"/>`;
+  return formatImageHtml(result);
 }
 
 function getImgElementList(divList: HTMLElement[]): HTMLImageElement[] {
@@ -164,11 +96,7 @@ async function extractTweetImages(
       { name: `${tweetName}_${baseUrl.split("/").pop()}.jpg`, url: imgUrl },
     platformState.configBar.download,
     );
-    if (result.originalSrc) {
-      images.push(`<img src="${result.displaySrc}" data-original-src="${result.originalSrc}"/>`);
-    } else {
-      images.push(`<img src="${result.displaySrc}"/>`);
-    }
+    images.push(formatImageHtml(result));
   }
 
   return images;

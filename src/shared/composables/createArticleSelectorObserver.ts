@@ -9,8 +9,9 @@ const BORDER_RADIUS = 12;
 export interface ArticleObserverConfig {
     prefix: string;
     articleIdPrefix: string;
+    articleSelector: string | (() => string);
     getObserverTarget(): HTMLElement | null;
-    shouldSkipArticle?(article: HTMLElement): boolean;
+    getAnchor?(article: HTMLElement): HTMLElement | null;
     onObserverChange?(): void;
     singleSelect?: boolean;
 }
@@ -19,10 +20,11 @@ interface SelectorEntry {
     host: HTMLElement;
     vnode: VNode;
     article: HTMLElement;
+    anchor: HTMLElement;
 }
 
 export function createArticleSelectorObserver(config: ArticleObserverConfig) {
-    const { prefix, articleIdPrefix, getObserverTarget, shouldSkipArticle, onObserverChange, singleSelect } = config;
+    const { prefix, articleIdPrefix, articleSelector, getObserverTarget, getAnchor, onObserverChange, singleSelect } = config;
 
     const mountedSelectors: Map<string, SelectorEntry> = new Map();
     const borderElements: Map<string, HTMLElement> = new Map();
@@ -101,13 +103,13 @@ export function createArticleSelectorObserver(config: ArticleObserverConfig) {
         overlayElement.style.width = `${document.documentElement.scrollWidth}px`;
         overlayElement.style.height = `${document.documentElement.scrollHeight}px`;
 
-        for (const [id, { host, article }] of mountedSelectors) {
-            updateSelectorPosition(host, article);
+        for (const [id, { host, anchor }] of mountedSelectors) {
+            updateSelectorPosition(host, anchor);
             const border = borderElements.get(id);
-            if (border) updateBorderPosition(border, article);
+            if (border) updateBorderPosition(border, anchor);
         }
-        const articles = Array.from(mountedSelectors.values()).map((s) => s.article);
-        updateOverlayMask(prefix, overlayElement, articles, BORDER_RADIUS);
+        const anchors = Array.from(mountedSelectors.values()).map((s) => s.anchor);
+        updateOverlayMask(prefix, overlayElement, anchors, BORDER_RADIUS);
     }
 
     function createBorderElement(article: HTMLElement, articleId: string): HTMLElement {
@@ -122,17 +124,21 @@ export function createArticleSelectorObserver(config: ArticleObserverConfig) {
 
     function mountSelectorToArticle(article: HTMLElement, articleId: string) {
         if (!overlayHost) return;
-        const host = createElement<HTMLDivElement>(`<div class="selector-host" style="position: absolute; z-index: 1002; pointer-events: auto;"></div>`);
 
-        updateSelectorPosition(host, article);
+        const anchor = getAnchor?.(article) ?? article;
+        const host = createElement<HTMLDivElement>(
+            `<div class="selector-host" style="position: absolute; z-index: 1002; pointer-events: auto;"></div>`,
+        );
+
+        updateSelectorPosition(host, anchor);
         overlayHost.appendChild(host);
 
         const vnode = h(ArticleSelector, { article, articleId, singleSelect });
         render(vnode, host);
 
-        createBorderElement(article, articleId);
+        createBorderElement(anchor, articleId);
 
-        mountedSelectors.set(articleId, { host, vnode, article });
+        mountedSelectors.set(articleId, { host, vnode, article, anchor });
     }
 
     function setupPositionListeners() {
@@ -150,19 +156,18 @@ export function createArticleSelectorObserver(config: ArticleObserverConfig) {
     }
 
     function mountNewArticles() {
-        const articleList = Array.from(document.querySelectorAll("article"));
+        const selector = typeof articleSelector === "function" ? articleSelector() : articleSelector;
+        const articleList = Array.from(document.querySelectorAll(selector));
         for (const article of articleList) {
             const articleEl = article as HTMLElement;
             const id = getArticleId(articleEl);
             if (mountedSelectors.has(id)) continue;
 
-            if (shouldSkipArticle?.(articleEl)) continue;
-
             mountSelectorToArticle(articleEl, id);
         }
         if (overlayElement) {
-            const articles = Array.from(mountedSelectors.values()).map((s) => s.article);
-            updateOverlayMask(prefix, overlayElement, articles, BORDER_RADIUS);
+            const anchors = Array.from(mountedSelectors.values()).map((s) => s.anchor);
+            updateOverlayMask(prefix, overlayElement, anchors, BORDER_RADIUS);
         }
     }
 
