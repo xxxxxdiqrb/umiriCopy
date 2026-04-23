@@ -1,6 +1,6 @@
 {
-  "name": "tweet-copy",
-  "version": "0.0.1",
+  "name": "umiri-copy",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite build --watch --mode development",

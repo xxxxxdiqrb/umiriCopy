@@ -4,3 +4,4 @@ dist/
 .opencode/
 .vscode/
 .DS_Store
+release/

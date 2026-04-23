@@ -1,18 +1,18 @@
 <script setup lang="ts">
 const openOptions = () => {
   if (chrome.runtime.openOptionsPage) {
-    chrome.runtime.openOptionsPage()
+    chrome.runtime.openOptionsPage();
   } else {
-    window.open(chrome.runtime.getURL('options/options.html'))
+    window.open(chrome.runtime.getURL("options/options.html"));
   }
-}
+};
 </script>
 
 <template>
   <div class="container">
     <div class="header">
       <span class="app-name">umiriCopy</span>
-      <span class="app-version">v0.0.1</span>
+      <span class="app-version">v0.1.0</span>
     </div>
     <p class="app-desc">一键复制推文到剪贴板</p>
     <button class="config-btn" @click="openOptions">
