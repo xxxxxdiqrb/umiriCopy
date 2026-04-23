@@ -3,6 +3,7 @@ import App from "./App.vue";
 import { appState, applyProvider } from "../../shared/store";
 import { createElement } from "../../shared/utils";
 import type { ProviderConfig } from "../../options/types";
+import { platformState } from "./platform";
 
 async function init() {
     const stored = (await chrome.storage.local.get("options")).options;
@@ -19,6 +20,7 @@ async function init() {
             
             appState.providers = providers;
             appState.defaultProviderId = defaultId;
+            platformState.configBar.selectedProviderId = defaultId;
             
             const provider = providers.find((p) => p.id === defaultId) || providers[0];
             if (provider) {

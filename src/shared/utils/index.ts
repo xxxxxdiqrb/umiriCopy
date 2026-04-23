@@ -1,3 +1,29 @@
+import { appState } from "../store";
+
+export async function getOpenAITranslation(text: string): Promise<string> {
+    const fetchParam = {
+        headers: {
+            "content-type": "application/json",
+            Authorization: "Bearer " + appState.options.apiKey,
+        },
+        method: "POST",
+        body: JSON.stringify({
+            model: appState.options.model,
+            messages: [
+                { role: "system", content: appState.options.systemMessage },
+                { role: "user", content: text },
+            ],
+            ...appState.options.otherParam,
+        }),
+    };
+    const data = await sendChromeMessage("GMFetch", {
+        url: appState.options.baseUrl + "/chat/completions",
+        option: fetchParam,
+        formatType: "json",
+    });
+    return data.choices[0].message.content;
+}
+
 export function createElement<T extends Element = Element>(htmlString: string): T {
     const range = document.createRange();
     return range.createContextualFragment(htmlString).children[0] as T;

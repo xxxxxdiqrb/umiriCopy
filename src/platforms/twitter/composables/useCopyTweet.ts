@@ -1,36 +1,12 @@
 import { appState } from "../../../shared/store";
 import { platformState } from "../platform";
-import { sendChromeMessage, formatDateForFilename } from "../../../shared/utils";
+import { formatDateForFilename, getOpenAITranslation } from "../../../shared/utils";
 import { captureScreenshots, extractAllTweetImages } from "./tweetMedia";
 import { setVideoSize } from "./videoHandler";
 
 const TESTID_USER_NAME = "User-Name";
 const TESTID_TWEET_TEXT = "tweetText";
 const TEXT_SEPARATOR = "\n---------------\n";
-
-async function getOpenAITranslation(text: string): Promise<string> {
-    const fetchParam = {
-        headers: {
-            "content-type": "application/json",
-            Authorization: "Bearer " + appState.options.apiKey,
-        },
-        method: "POST",
-        body: JSON.stringify({
-            model: appState.options.model,
-            messages: [
-                { role: "system", content: appState.options.systemMessage },
-                { role: "user", content: text },
-            ],
-            ...appState.options.otherParam,
-        }),
-    };
-    const data = await sendChromeMessage("GMFetch", {
-        url: appState.options.baseUrl + "/chat/completions",
-        option: fetchParam,
-        formatType: "json",
-    });
-    return data.choices[0].message.content;
-}
 
 function extractTweetTextContent(tweetTextElement: HTMLElement): string {
     const childrenList = Array.from(tweetTextElement.children);
