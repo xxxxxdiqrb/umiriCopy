@@ -127,3 +127,40 @@ export function formatImageHtml(result: ProcessImageResult): string {
     }
     return `<img src="${result.displaySrc}"/>`;
 }
+
+export function downloadVideoWithProgress(
+    url: string,
+    filename: string,
+    onProgress: (percent: number) => void
+): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.responseType = 'blob';
+
+        xhr.onprogress = (e) => {
+            if (e.lengthComputable) {
+                const percent = (e.loaded / e.total) * 100;
+                onProgress(percent);
+            }
+        };
+
+        xhr.onload = () => {
+            if (xhr.status === 200) {
+                const blob = xhr.response;
+                const downloadUrl = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(downloadUrl);
+                resolve();
+            } else {
+                reject(new Error(`下载失败: ${xhr.status}`));
+            }
+        };
+
+        xhr.onerror = () => reject(new Error('网络错误'));
+        xhr.send();
+    });
+}

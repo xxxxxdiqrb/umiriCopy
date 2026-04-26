@@ -8,12 +8,14 @@ const props = defineProps<{
   selectedCount: number;
   submitLabel: string;
   selectedCountLabel: string;
+  showDownloadVideo?: boolean;
 }>();
 
 const emit = defineEmits<{
   cancel: [];
   submit: [];
   "update:item": [key: string, value: boolean | string];
+  downloadVideo: [];
 }>();
 
 const visibleItems = computed(() => {
@@ -38,36 +40,20 @@ const handleSelectChange = (item: ConfigItem, event: Event) => {
 </script>
 
 <template>
-  <div
-    v-if="visible"
-    class="config-bar-overlay"
-    @click.self="emit('cancel')"
-  >
+  <div v-if="visible" class="config-bar-overlay" @click.self="emit('cancel')">
     <div class="config-bar">
       <template v-for="item in visibleItems" :key="item.key">
         <div v-if="item.type === 'toggle'" class="config-item">
           <span class="config-label">{{ item.label }}</span>
-          <button
-            class="toggle-btn"
-            :class="{ active: item.value }"
-            @click="handleToggle(item)"
-          >
+          <button class="toggle-btn" :class="{ active: item.value }" @click="handleToggle(item)">
             <span class="toggle-indicator"></span>
           </button>
         </div>
         <div v-else-if="item.type === 'select'" class="config-item">
           <span class="config-label">{{ item.label }}</span>
-          <select
-            class="provider-select"
-            :value="item.value"
-            @change="handleSelectChange(item, $event)"
-          >
+          <select class="provider-select" :value="item.value" @change="handleSelectChange(item, $event)">
             <option value="" disabled>请选择配置</option>
-            <option
-              v-for="opt in item.options"
-              :key="opt.value"
-              :value="opt.value"
-            >
+            <option v-for="opt in item.options" :key="opt.value" :value="opt.value">
               {{ opt.label }}
             </option>
           </select>
@@ -77,6 +63,7 @@ const handleSelectChange = (item: ConfigItem, event: Event) => {
         <span class="config-label">{{ selectedCountLabel }}</span>
         <span class="config-value">{{ selectedCount }}</span>
       </div>
+      <button v-if="showDownloadVideo" class="download-btn" @click="emit('downloadVideo')">下载视频</button>
       <button class="cancel-btn" @click="emit('cancel')">取消</button>
       <button class="submit-btn" @click="emit('submit')">{{ submitLabel }}</button>
     </div>
@@ -121,17 +108,13 @@ const handleSelectChange = (item: ConfigItem, event: Event) => {
 .config-label {
   color: rgb(239, 243, 244);
   font-size: 15px;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
-    sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 .config-value {
   color: white;
   font-size: 15px;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
-    sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 .provider-select {
@@ -141,9 +124,7 @@ const handleSelectChange = (item: ConfigItem, event: Event) => {
   border-radius: 8px;
   padding: 6px 10px;
   font-size: 14px;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
-    sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   cursor: pointer;
   min-width: 120px;
   outline: none;
@@ -198,9 +179,7 @@ const handleSelectChange = (item: ConfigItem, event: Event) => {
   font-size: 16px;
   cursor: pointer;
   transition: background-color 0.2s;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
-    sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 
   &:active {
     opacity: 0.7;
@@ -223,5 +202,12 @@ const handleSelectChange = (item: ConfigItem, event: Event) => {
   color: white;
   border: 1px solid white;
   background-color: rgb(15, 20, 25);
+}
+
+.download-btn {
+  @extend %base-btn;
+  color: white;
+  border: 1px solid rgb(29, 155, 240);
+  background-color: rgb(29, 155, 240);
 }
 </style>
