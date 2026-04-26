@@ -1,7 +1,7 @@
 import { waitATick } from "../../../shared/utils";
 import { appState, showToast } from "../../../shared/store";
 import { downloadVideoWithProgress } from "../../../shared/utils";
-import { getTweetDetail, TweetMedia } from "./tweetApi";
+import { getTweetDetail, TweetMedia } from "./tweetService";
 import { observer } from "../platform";
 
 async function setVideoSize(articleList: HTMLElement[]) {
