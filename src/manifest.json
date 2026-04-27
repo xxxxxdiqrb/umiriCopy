@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "umiriCopy",
-  "version": "0.1.0",
-  "description": "一键复制推文到剪贴板",
+  "version": "0.1.1",
+  "description": "一键复制推文/帖子或下载视频到剪贴板",
   "icons": {
     "32": "icons/icon32.png",
     "64": "icons/icon64.png"

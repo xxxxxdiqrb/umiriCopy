@@ -1,7 +1,7 @@
 import { appState } from "../../../shared/store";
 import { platformState } from "../platform";
 import { toPng } from "html-to-image";
-import { processImage, formatImageHtml } from "../../../shared/utils";
+import { processImage, formatImageHtml, sleep } from "../../../shared/utils";
 
 const ORIG_IMAGE_PARAM = "orig";
 
@@ -14,10 +14,7 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-async function captureScreenshots(
-  articleList: HTMLElement[],
-  tweetName: string,
-): Promise<string> {
+async function captureScreenshots(articleList: HTMLElement[], tweetName: string): Promise<string> {
   appState.loading.text = "正在获取截图";
 
   const screenshots: string[] = [];
@@ -27,10 +24,7 @@ async function captureScreenshots(
   }
 
   const imageElements = await Promise.all(screenshots.map(loadImage));
-  const totalHeight = imageElements.reduce(
-    (sum, img) => sum + img.naturalHeight,
-    0,
-  );
+  const totalHeight = imageElements.reduce((sum, img) => sum + img.naturalHeight, 0);
   const maxWidth = Math.max(...imageElements.map((img) => img.naturalWidth));
 
   const canvas = document.createElement("canvas");
@@ -48,39 +42,22 @@ async function captureScreenshots(
   }
 
   const mergedBase64 = canvas.toDataURL("image/png");
-  const result = await processImage(
-    { name: `${tweetName}.jpg`, url: mergedBase64 },
-    platformState.configBar.download,
-  );
+  const result = await processImage({ name: `${tweetName}.jpg`, url: mergedBase64 }, platformState.configBar.download);
   return formatImageHtml(result);
 }
 
 function getImgElementList(divList: HTMLElement[]): HTMLImageElement[] {
-  const ariaLabelledbyDiv = divList.find((item) =>
-    item.getAttribute("aria-labelledby"),
-  );
-  const extraElement = ariaLabelledbyDiv?.children[0] as
-    | HTMLElement
-    | undefined;
+  const ariaLabelledbyDiv = divList.find((item) => item.getAttribute("aria-labelledby"));
+  const extraElement = ariaLabelledbyDiv?.children[0] as HTMLElement | undefined;
   const span = extraElement?.querySelector("span");
 
   if (!ariaLabelledbyDiv || !extraElement) return [];
-  if (
-    span &&
-    span.textContent !== "ALT" &&
-    span.parentElement?.nodeName !== "A"
-  )
-    return [];
+  if (span && span.textContent !== "ALT" && span.parentElement?.nodeName !== "A") return [];
 
   return Array.from(extraElement.querySelectorAll("img"));
 }
 
-async function extractTweetImages(
-  divList: HTMLElement[],
-  tweetName: string,
-  startIndex: number,
-  totalCount: number,
-): Promise<string[]> {
+async function extractTweetImages(divList: HTMLElement[], tweetName: string, startIndex: number, totalCount: number): Promise<string[]> {
   const imgElementList = getImgElementList(divList);
   const images: string[] = [];
   let index = startIndex;
@@ -92,41 +69,28 @@ async function extractTweetImages(
     searchParam.set("name", ORIG_IMAGE_PARAM);
     const imgUrl = baseUrl + "?" + searchParam.toString();
 
-    const result = await processImage(
-      { name: `${tweetName}_${baseUrl.split("/").pop()}.jpg`, url: imgUrl },
-    platformState.configBar.download,
-    );
+    const result = await processImage({ name: `${tweetName}_${baseUrl.split("/").pop()}.jpg`, url: imgUrl }, platformState.configBar.download);
     images.push(formatImageHtml(result));
   }
 
   return images;
 }
 
-async function extractAllTweetImages(
-  articleList: HTMLElement[],
-  tweetName: string,
-): Promise<string[]> {
+async function extractAllTweetImages(articleList: HTMLElement[], tweetName: string): Promise<string[]> {
   const allImages: string[] = [];
   let globalIndex = 1;
   let totalCount = 0;
 
   for (const article of articleList) {
-    const divList = Array.from(
-      article.querySelectorAll("div"),
-    ) as HTMLElement[];
+    const divList = Array.from(article.querySelectorAll("div")) as HTMLElement[];
     totalCount += getImgElementList(divList).length;
   }
 
   for (const article of articleList) {
-    const divList = Array.from(
-      article.querySelectorAll("div"),
-    ) as HTMLElement[];
-    const images = await extractTweetImages(
-      divList,
-      tweetName,
-      globalIndex,
-      totalCount,
-    );
+    article.scrollIntoView({ behavior: "instant", block: "center" });
+    await sleep(200);
+    const divList = Array.from(article.querySelectorAll("div")) as HTMLElement[];
+    const images = await extractTweetImages(divList, tweetName, globalIndex, totalCount);
     globalIndex += images.length;
     allImages.push(...images);
   }

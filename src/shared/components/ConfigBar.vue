@@ -63,9 +63,9 @@ const handleSelectChange = (item: ConfigItem, event: Event) => {
         <span class="config-label">{{ selectedCountLabel }}</span>
         <span class="config-value">{{ selectedCount }}</span>
       </div>
-      <button v-if="showDownloadVideo" class="download-btn" @click="emit('downloadVideo')">下载视频</button>
       <button class="cancel-btn" @click="emit('cancel')">取消</button>
       <button class="submit-btn" @click="emit('submit')">{{ submitLabel }}</button>
+      <button v-if="showDownloadVideo" class="download-btn" @click="emit('downloadVideo')">下载视频</button>
     </div>
   </div>
 </template>
@@ -197,17 +197,11 @@ const handleSelectChange = (item: ConfigItem, event: Event) => {
   background-color: white;
 }
 
-.submit-btn {
+.submit-btn,
+.download-btn {
   @extend %base-btn;
   color: white;
   border: 1px solid white;
   background-color: rgb(15, 20, 25);
-}
-
-.download-btn {
-  @extend %base-btn;
-  color: white;
-  border: 1px solid rgb(29, 155, 240);
-  background-color: rgb(29, 155, 240);
 }
 </style>

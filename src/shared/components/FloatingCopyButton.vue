@@ -2,6 +2,7 @@
 defineProps<{
   label?: string;
   icon?: string;
+  visible?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -10,7 +11,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="floating-btn-wrapper">
+  <div class="floating-btn-wrapper" v-if="visible !== false">
     <button class="floating-copy-btn" @click="emit('click')">
       <slot name="icon">
         <svg viewBox="0 0 24 24" class="copy-icon" aria-hidden="true">

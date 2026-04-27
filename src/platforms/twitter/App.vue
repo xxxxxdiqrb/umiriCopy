@@ -53,7 +53,7 @@ const showDownloadVideo = computed(() => {
   <Toast />
   <LoadingPanel />
   <ActionBar />
-  <FloatingCopyButton label="复制" @click="handleFloatingButtonClick" />
+  <FloatingCopyButton label="复制" visible @click="handleFloatingButtonClick" />
   <ConfigBar
     :visible="platformState.configBar.visible"
     :items="configItems"

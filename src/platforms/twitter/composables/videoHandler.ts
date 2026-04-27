@@ -1,8 +1,14 @@
 import { waitATick } from "../../../shared/utils";
-import { appState, showToast } from "../../../shared/store";
 import { downloadVideoWithProgress } from "../../../shared/utils";
 import { getTweetDetail, TweetMedia } from "./tweetService";
-import { observer } from "../platform";
+import { observer, platformState } from "../platform";
+import {
+  exitCopyState,
+  showDownloadError,
+  createProgressCallback,
+  showDownloadSuccess,
+  showLoadingWithText,
+} from "../../../shared/composables/useVideoDownload";
 
 async function setVideoSize(articleList: HTMLElement[]) {
   const overlays: HTMLDivElement[] = [];
@@ -81,8 +87,7 @@ export async function handleDownloadVideo(): Promise<void> {
     if (!match) return;
     const tweetId = match[1];
 
-    appState.loading.visible = true;
-    appState.loading.text = "正在获取推文信息...";
+    showLoadingWithText("正在获取推文信息...");
 
     const detail = await getTweetDetail(tweetId);
     if (!detail) {
@@ -104,21 +109,19 @@ export async function handleDownloadVideo(): Promise<void> {
 
       const videoFilename = extractVideoFilename(video.videoUrl);
       const filename = buildFilename(screenName, tweetDate, videoFilename);
-      appState.loading.text = `正在获取视频 ${i + 1}/${total}\n当前进度 0.00%`;
+      showLoadingWithText(`正在获取视频 ${i + 1}/${total}`);
 
-      await downloadVideoWithProgress(video.videoUrl, filename, (percent: number) => {
-        appState.loading.text = `正在获取视频 ${i + 1}/${total}\n当前进度 ${percent.toFixed(2)}%`;
-      });
+      await downloadVideoWithProgress(
+        video.videoUrl,
+        filename,
+        createProgressCallback(`正在获取视频 ${i + 1}/${total}`)
+      );
     }
 
-    appState.loading.visible = false;
-    showToast("下载视频成功", "success");
+    showDownloadSuccess();
+    exitCopyState(platformState, observer);
   } catch (error) {
-    appState.loading.visible = false;
-    appState.actionBar.visible = true;
-    appState.actionBar.message = error instanceof Error ? error.message : "下载失败";
-    appState.actionBar.buttonText = "确定";
-    appState.actionBar.handler = null;
+    showDownloadError(error);
   }
 }
 

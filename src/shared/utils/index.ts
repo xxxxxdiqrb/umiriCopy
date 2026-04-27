@@ -41,6 +41,10 @@ export function waitATick(): Promise<void> {
     });
 }
 
+export function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export function setElementStyle(element: HTMLElement, option: Record<string, string>) {
     const keys = Object.keys(option);
     for (const key of keys) {
@@ -128,15 +132,23 @@ export function formatImageHtml(result: ProcessImageResult): string {
     return `<img src="${result.displaySrc}"/>`;
 }
 
+export interface DownloadVideoOptions {
+    withCredentials?: boolean;
+}
+
 export function downloadVideoWithProgress(
     url: string,
     filename: string,
-    onProgress: (percent: number) => void
+    onProgress: (percent: number) => void,
+    options?: DownloadVideoOptions
 ): Promise<void> {
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open('GET', url, true);
         xhr.responseType = 'blob';
+        if (options?.withCredentials) {
+            xhr.withCredentials = true;
+        }
 
         xhr.onprogress = (e) => {
             if (e.lengthComputable) {

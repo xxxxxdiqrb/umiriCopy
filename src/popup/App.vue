@@ -1,4 +1,6 @@
 <script setup lang="ts">
+const version = chrome.runtime.getManifest().version;
+
 const openOptions = () => {
   if (chrome.runtime.openOptionsPage) {
     chrome.runtime.openOptionsPage();
@@ -12,7 +14,7 @@ const openOptions = () => {
   <div class="container">
     <div class="header">
       <span class="app-name">umiriCopy</span>
-      <span class="app-version">v0.1.0</span>
+      <span class="app-version">v{{ version }}</span>
     </div>
     <p class="app-desc">一键复制推文到剪贴板</p>
     <button class="config-btn" @click="openOptions">
