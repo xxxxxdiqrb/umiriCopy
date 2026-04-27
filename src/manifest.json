@@ -25,6 +25,11 @@
       "matches": ["https://www.instagram.com/*"],
       "js": ["content_scripts/instagramCopy.js"],
       "css": ["content_scripts/instagramCopy.css"]
+    },
+    {
+      "matches": ["https://www.tiktok.com/*"],
+      "js": ["content_scripts/tiktokCopy.js"],
+      "css": ["content_scripts/tiktokCopy.css"]
     }
   ]
 }

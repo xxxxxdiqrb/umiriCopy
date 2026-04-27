@@ -47,6 +47,12 @@ async function buildAll() {
     configFile: r('vite.instagram.config.ts')
   })
 
+  console.log('Building TikTok content script...')
+  
+  await build({
+    configFile: r('vite.tiktok.config.ts')
+  })
+
   console.log('Copying extension files...')
   
   copyDir(r('public/icons'), r('dist/icons'))
