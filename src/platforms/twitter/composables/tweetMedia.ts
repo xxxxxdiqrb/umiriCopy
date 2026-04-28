@@ -2,6 +2,7 @@ import { appState } from "../../../shared/store";
 import { platformState } from "../platform";
 import { toPng } from "html-to-image";
 import { processImage, formatImageHtml, sleep } from "../../../shared/utils";
+import { getTweetName } from "../utils";
 
 const ORIG_IMAGE_PARAM = "orig";
 
@@ -76,7 +77,7 @@ async function extractTweetImages(divList: HTMLElement[], tweetName: string, sta
   return images;
 }
 
-async function extractAllTweetImages(articleList: HTMLElement[], tweetName: string): Promise<string[]> {
+async function extractAllTweetImages(articleList: HTMLElement[]): Promise<string[]> {
   const allImages: string[] = [];
   let globalIndex = 1;
   let totalCount = 0;
@@ -89,6 +90,7 @@ async function extractAllTweetImages(articleList: HTMLElement[], tweetName: stri
   for (const article of articleList) {
     article.scrollIntoView({ behavior: "instant", block: "center" });
     await sleep(200);
+    const tweetName = getTweetName(article);
     const divList = Array.from(article.querySelectorAll("div")) as HTMLElement[];
     const images = await extractTweetImages(divList, tweetName, globalIndex, totalCount);
     globalIndex += images.length;

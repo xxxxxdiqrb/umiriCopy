@@ -1,11 +1,10 @@
 import { appState } from "../../../shared/store";
 import { platformState } from "../platform";
-import { formatDateForFilename, getOpenAITranslation, waitATick } from "../../../shared/utils";
+import { getOpenAITranslation, waitATick } from "../../../shared/utils";
 import { captureScreenshots, extractAllTweetImages } from "./tweetMedia";
 import { setVideoSize } from "./videoHandler";
+import { getTweetName, getTweetTime, getTweetUserName } from "../utils";
 
-const TESTID_USER_NAME = "User-Name";
-const TESTID_TWEET_TEXT = "tweetText";
 const TEXT_SEPARATOR = "\n---------------\n";
 
 function extractTweetTextContent(tweetTextElement: HTMLElement): string {
@@ -22,43 +21,31 @@ function extractTweetTextContent(tweetTextElement: HTMLElement): string {
 }
 
 async function extractTweetTexts(articleList: HTMLElement[]): Promise<string> {
-  const textDivs = articleList
-    .map((article) => {
-      const divList = Array.from(article.querySelectorAll("div")) as HTMLElement[];
-      return divList.find((div) => div.dataset.testid === TESTID_TWEET_TEXT);
-    })
-    .filter((div): div is HTMLElement => !!div);
+  const textContents = [];
+  for (const article of articleList) {
+    const textDiv = article.querySelector('div[data-testid="tweetText"]') as HTMLElement | null;
+    if (!textDiv || article.querySelector("div[aria-labelledby")?.contains(textDiv)) {
+      continue;
+    }
+    const userName = getTweetUserName(article);
+    const time = getTweetTime(article);
+    textContents.push(`${userName} · ${time.toLocaleString()}\n${extractTweetTextContent(textDiv)}`);
+  }
 
-  if (textDivs.length === 0) return "";
-
-  const textContents = textDivs.map((div) => extractTweetTextContent(div));
+  if (textContents.length === 0) return "";
 
   if (platformState.configBar.translate) {
     appState.loading.text = "正在翻译文本";
-    const translatedTexts = await Promise.all(textContents.map((text) => getOpenAITranslation(text)));
-    return translatedTexts.join(TEXT_SEPARATOR);
+    const sourceText = textContents.join(TEXT_SEPARATOR);
+    const translatedText = await getOpenAITranslation(sourceText);
+    return translatedText;
   }
 
   return textContents.join(TEXT_SEPARATOR);
 }
 
-function getTweetName(article: HTMLElement, divList: HTMLElement[]): string {
-  const userNameDiv = divList.find((div) => div.dataset.testid === TESTID_USER_NAME);
-  const userName = userNameDiv?.children[1]?.textContent?.split("\n")[0] || "unknown";
-
-  const timeElement = article.querySelector("a > time");
-  const date = timeElement ? new Date(timeElement.getAttribute("datetime")!) : new Date();
-  const timeStr = formatDateForFilename(date);
-
-  return `${userName}_${timeStr}`;
-}
-
 export async function copyTweet(articleList: HTMLElement[]): Promise<string> {
   const { removeOverlay } = await setVideoSize(articleList);
-
-  const firstArticle = articleList[0];
-  const divList = Array.from(firstArticle.querySelectorAll("div")) as HTMLElement[];
-  const tweetName = getTweetName(firstArticle, divList);
 
   const copyContentList: string[] = [];
 
@@ -72,11 +59,11 @@ export async function copyTweet(articleList: HTMLElement[]): Promise<string> {
     copyContentList.push(text);
   }
 
-  const screenshot = await captureScreenshots(articleList, tweetName);
+  const screenshot = await captureScreenshots(articleList, getTweetName(articleList[0]));
   copyContentList.push(screenshot);
 
   if (platformState.configBar.copyImages) {
-    const images = await extractAllTweetImages(articleList, tweetName);
+    const images = await extractAllTweetImages(articleList);
     copyContentList.push(...images);
   }
 
