@@ -1,13 +1,17 @@
 {
   "manifest_version": 3,
   "name": "umiriCopy",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "一键复制推文/帖子或下载视频到剪贴板",
   "icons": {
     "32": "icons/icon32.png",
     "64": "icons/icon64.png"
   },
-  "permissions": ["activeTab", "downloads", "storage"],
+  "permissions": [
+    "activeTab",
+    "downloads",
+    "storage"
+  ],
   "options_page": "options/index.html",
   "background": {
     "service_worker": "service-worker.js"
@@ -17,19 +21,37 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://x.com/*"],
-      "js": ["content_scripts/twitterCopy.js"],
-      "css": ["content_scripts/twitterCopy.css"]
+      "matches": [
+        "https://x.com/*"
+      ],
+      "js": [
+        "content_scripts/twitterCopy.js"
+      ],
+      "css": [
+        "content_scripts/twitterCopy.css"
+      ]
     },
     {
-      "matches": ["https://www.instagram.com/*"],
-      "js": ["content_scripts/instagramCopy.js"],
-      "css": ["content_scripts/instagramCopy.css"]
+      "matches": [
+        "https://www.instagram.com/*"
+      ],
+      "js": [
+        "content_scripts/instagramCopy.js"
+      ],
+      "css": [
+        "content_scripts/instagramCopy.css"
+      ]
     },
     {
-      "matches": ["https://www.tiktok.com/*"],
-      "js": ["content_scripts/tiktokCopy.js"],
-      "css": ["content_scripts/tiktokCopy.css"]
+      "matches": [
+        "https://www.tiktok.com/*"
+      ],
+      "js": [
+        "content_scripts/tiktokCopy.js"
+      ],
+      "css": [
+        "content_scripts/tiktokCopy.css"
+      ]
     }
   ]
 }
