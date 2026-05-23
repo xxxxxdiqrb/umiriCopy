@@ -24,7 +24,7 @@ async function getInstagramImageUrlList(article: HTMLElement, isDetail: boolean)
   let ul: HTMLElement | null = null,
     scrollElement: HTMLElement | null = null;
   if (!isDetail) {
-    const carouselContainer = article.querySelector('div[aria-hidden="true"]') as HTMLElement;
+    const carouselContainer = article.querySelector('div[role="presentation"]') || (article.querySelector("div._aagu") as HTMLElement);
 
     ul = carouselContainer.querySelector("ul") as HTMLElement;
     scrollElement = findScrollElement(ul);

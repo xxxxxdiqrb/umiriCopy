@@ -1,8 +1,7 @@
 import { createPlatformStore } from "../../shared/composables/createPlatformStore";
 import { createArticleSelectorObserver } from "../../shared/composables/createArticleSelectorObserver";
 
-export const { platformState, configItems, updateConfig } =
-  createPlatformStore();
+export const { platformState, configItems, updateConfig } = createPlatformStore();
 
 export const observer = createArticleSelectorObserver({
   prefix: "instagram-copy",
@@ -14,16 +13,14 @@ export const observer = createArticleSelectorObserver({
     return "article";
   },
   singleSelect: true,
-  getObserverTarget: () =>
-    document.querySelector("article")?.parentElement ?? null,
+  getObserverTarget: () => document.querySelector("article")?.parentElement ?? null,
   getAnchor: (article) => {
     if (article.getAttribute("role") !== "presentation") {
-      return article.querySelector('div[aria-hidden="true"]');
+      // return article.querySelector('div[aria-hidden="true"]');
+      return article.querySelector('div[role="presentation"]') || article.querySelector("div._aagu");
     } else {
       // 太傻逼了，怎么要这样选择啊
-      const ulType = article.querySelector(
-        'div[role="presentation"]:has(img[srcset])',
-      );
+      const ulType = article.querySelector('div[role="presentation"]:has(img[srcset])');
       const imgType = article.querySelector("img[srcset]");
       const videoType = article.querySelector("video");
       return (ulType || imgType || videoType || article) as HTMLElement | null;
