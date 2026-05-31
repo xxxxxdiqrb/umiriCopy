@@ -6,17 +6,19 @@ export interface PlatformState {
   configBar: {
     visible: boolean;
     translate: boolean;
+    captureScreenshot: boolean;
     copyImages: boolean;
     download: boolean;
     selectedProviderId: string | null;
   };
 }
 
-export function createPlatformStore() {
+export function createPlatformStore(platform?: string) {
     const platformState = reactive<PlatformState>({
         configBar: {
             visible: false,
             translate: true,
+            captureScreenshot: true,
             copyImages: true,
             download: false,
             selectedProviderId: null,
@@ -41,6 +43,16 @@ export function createPlatformStore() {
                 value: p.id,
             })),
         },
+        ...(platform === "twitter"
+            ? [
+                  {
+                      key: "captureScreenshot",
+                      label: "是否截图",
+                      type: "toggle" as const,
+                      value: platformState.configBar.captureScreenshot,
+                  },
+              ]
+            : []),
         {
             key: "copyImages",
             label: "复制图片",
@@ -64,6 +76,9 @@ export function createPlatformStore() {
                 break;
             case "translate":
                 configBar.translate = value as boolean;
+                break;
+            case "captureScreenshot":
+                configBar.captureScreenshot = value as boolean;
                 break;
             case "copyImages":
                 configBar.copyImages = value as boolean;

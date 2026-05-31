@@ -59,8 +59,10 @@ export async function copyTweet(articleList: HTMLElement[]): Promise<string> {
     copyContentList.push(text);
   }
 
-  const screenshot = await captureScreenshots(articleList, getTweetName(articleList[0]));
-  copyContentList.push(screenshot);
+  if (platformState.configBar.captureScreenshot) {
+    const screenshot = await captureScreenshots(articleList, getTweetName(articleList[0]));
+    copyContentList.push(screenshot);
+  }
 
   if (platformState.configBar.copyImages) {
     const images = await extractAllTweetImages(articleList);

@@ -2,7 +2,7 @@ import { formatDateForFilename } from "../../shared/utils";
 
 export function getTweetUserName(article: HTMLElement): string {
   const userNameDiv = article.querySelector('div[data-testid="User-Name"]') as HTMLElement | null;
-  return userNameDiv?.innerText.split("\n")[1] || "unknown";
+  return userNameDiv?.innerText.split("\n")[0] || "unknown";
 }
 
 export function getTweetTime(article: HTMLElement): Date {

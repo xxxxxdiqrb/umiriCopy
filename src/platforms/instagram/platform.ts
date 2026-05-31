@@ -1,7 +1,7 @@
 import { createPlatformStore } from "../../shared/composables/createPlatformStore";
 import { createArticleSelectorObserver } from "../../shared/composables/createArticleSelectorObserver";
 
-export const { platformState, configItems, updateConfig } = createPlatformStore();
+export const { platformState, configItems, updateConfig } = createPlatformStore("instagram");
 
 export const observer = createArticleSelectorObserver({
   prefix: "instagram-copy",
