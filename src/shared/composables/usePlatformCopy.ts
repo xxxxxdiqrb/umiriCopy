@@ -48,11 +48,58 @@ export function usePlatformCopy(options: UsePlatformCopyOptions) {
         validateBeforeSubmit,
     } = options;
 
+    let retryArticles: HTMLElement[] | null = null;
+
+    const clearActionBarRetry = () => {
+        appState.actionBar.retryVisible = false;
+        appState.actionBar.retryHandler = null;
+    };
+
     const handleCancel = () => {
+        retryArticles = null;
+        clearActionBarRetry();
         platformState.configBar.visible = false;
         appState.selectMode.active = false;
         appState.selectedArticles.clear();
         unmountAllSelectors();
+    };
+
+    const executeCopy = async (articles: HTMLElement[]) => {
+        appState.loading.visible = true;
+        appState.loading.text = "正在复制";
+
+        try {
+            const copyString = await copyArticles(articles);
+            appState.previewDialog.content = copyString;
+            appState.previewDialog.visible = true;
+            retryArticles = null;
+            clearActionBarRetry();
+        } catch (e) {
+            console.error(e);
+            const stage = appState.loading.text;
+            const stageName = stage.includes("翻译")
+                ? "翻译"
+                : stage.includes("截图")
+                    ? "截图"
+                    : stage.includes("图片")
+                        ? "图片下载"
+                        : "资源获取";
+            appState.actionBar.message = `${stageName}失败：${getErrorMessage(e)}`;
+            appState.actionBar.buttonText = "确定";
+            appState.actionBar.handler = null;
+            retryArticles = articles;
+            appState.actionBar.retryVisible = true;
+            appState.actionBar.retryHandler = () => {
+                if (retryArticles) void executeCopy(retryArticles);
+            };
+            appState.actionBar.visible = true;
+        } finally {
+            appState.loading.visible = false;
+            platformState.configBar.visible = false;
+            appState.selectMode.active = false;
+            appState.selectedArticles.clear();
+            unmountAllSelectors();
+        }
     };
 
     const handleSubmit = async () => {
@@ -68,34 +115,7 @@ export function usePlatformCopy(options: UsePlatformCopyOptions) {
             return;
         }
 
-        appState.loading.visible = true;
-        appState.loading.text = "正在复制";
-
-        try {
-            const copyString = await copyArticles(articles);
-            appState.previewDialog.content = copyString;
-            appState.previewDialog.visible = true;
-        } catch (e) {
-            console.error(e);
-            const stage = appState.loading.text;
-            const stageName = stage.includes("翻译")
-                ? "翻译"
-                : stage.includes("截图")
-                    ? "截图"
-                    : stage.includes("图片")
-                        ? "图片下载"
-                        : "资源获取";
-            appState.actionBar.message = `${stageName}失败：${getErrorMessage(e)}`;
-            appState.actionBar.buttonText = "确定";
-            appState.actionBar.handler = null;
-            appState.actionBar.visible = true;
-        } finally {
-            appState.loading.visible = false;
-            platformState.configBar.visible = false;
-            appState.selectMode.active = false;
-            appState.selectedArticles.clear();
-            unmountAllSelectors();
-        }
+        await executeCopy(articles);
     };
 
     const handleUpdateItem = (key: string, value: boolean | string) => {

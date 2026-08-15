@@ -22,6 +22,8 @@ export function showDownloadError(error: unknown): void {
   appState.actionBar.message = error instanceof Error ? error.message : "下载失败";
   appState.actionBar.buttonText = "确定";
   appState.actionBar.handler = null;
+  appState.actionBar.retryVisible = false;
+  appState.actionBar.retryHandler = null;
 }
 
 export function createProgressCallback(prefix: string): VideoDownloadProgressCallback {

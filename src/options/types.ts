@@ -26,7 +26,7 @@ export const createDefaultProvider = (): ProviderConfig => ({
   name: "DeepSeek",
   baseUrl: "https://api.deepseek.com/v1",
   apiKey: "",
-  model: "deepseek-chat",
+  model: "deepseek-v4-flash",
   systemMessage: DEFAULT_SYSTEM_MESSAGE,
   customVariables: [
     { name: "temperature", value: "1.3" },

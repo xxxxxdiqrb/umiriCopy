@@ -1,6 +1,6 @@
 import { appState } from "../../../shared/store";
 import { platformState } from "../platform";
-import { waitATick, formatDateForFilename, processImage, formatImageHtml, getOpenAITranslation } from "../../../shared/utils";
+import { waitATick, formatDateForFilename, processImage, formatImageHtml, translateTextItems, type TranslationTextItem } from "../../../shared/utils";
 
 function isScrollable(element: HTMLElement): boolean {
   const overflowX = getComputedStyle(element).overflowX;
@@ -67,16 +67,16 @@ async function getUlImageList(scrollElement: HTMLElement, container: HTMLElement
   return Array.from(imageUrlSet);
 }
 
-async function getInstagramCaption(article: HTMLElement, isDetail: boolean): Promise<string> {
+async function getInstagramCaption(article: HTMLElement, isDetail: boolean): Promise<TranslationTextItem | null> {
   if (isDetail) {
     const name = article.querySelector("h2")?.innerText;
     if (!name) {
-      return "";
+      return null;
     }
     const time = article.querySelector("time") as HTMLTimeElement;
     const timeString = new Date(time.dateTime).toLocaleString();
     const caption = article.querySelector("h1")?.innerText;
-    return `@${name} · ${timeString}\n${caption}`;
+    return { header: `@${name} · ${timeString}\n`, content: caption || "" };
   } else {
     const moreTextButton = article.querySelector('span > div[aria-disabled="false"]') as HTMLElement | null;
     if (moreTextButton) {
@@ -86,7 +86,7 @@ async function getInstagramCaption(article: HTMLElement, isDetail: boolean): Pro
 
     const captionElement = article.querySelector("section + div") as HTMLElement | null;
     if (!captionElement) {
-      return "";
+      return null;
     }
 
     const textSplit = captionElement.innerText.split("\n");
@@ -94,7 +94,7 @@ async function getInstagramCaption(article: HTMLElement, isDetail: boolean): Pro
     const caption = textSplit.join("\n");
     const time = article.querySelector("time") as HTMLTimeElement;
     const timeString = new Date(time.dateTime).toLocaleString();
-    return `@${name} · ${timeString}\n${caption}`;
+    return { header: `@${name} · ${timeString}\n`, content: caption || "" };
   }
 }
 
@@ -115,13 +115,12 @@ export async function copyInstagram(articleList: HTMLElement[]): Promise<string>
 
   const isDetail = firstArticle.getAttribute("role") === "presentation";
 
-  let text = await getInstagramCaption(firstArticle, isDetail);
-  if (text) {
+  const textItem = await getInstagramCaption(firstArticle, isDetail);
+  if (textItem) {
     if (platformState.configBar.translate) {
       appState.loading.text = "正在翻译文本";
-      text = await getOpenAITranslation(text);
     }
-    copyContentList.push(text);
+    copyContentList.push(await translateTextItems([textItem], platformState.configBar.translate, ""));
   }
 
   if (platformState.configBar.copyImages) {

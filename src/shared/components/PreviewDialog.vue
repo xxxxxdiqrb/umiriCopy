@@ -53,6 +53,8 @@ const handleCopy = async () => {
     appState.actionBar.message = `复制失败: ${error instanceof Error ? error.message : "未知错误"}`;
     appState.actionBar.buttonText = "确定";
     appState.actionBar.handler = null;
+    appState.actionBar.retryVisible = false;
+    appState.actionBar.retryHandler = null;
     appState.actionBar.visible = true;
   }
 };

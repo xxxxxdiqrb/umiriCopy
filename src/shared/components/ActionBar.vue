@@ -3,7 +3,15 @@ import { appState } from "../store";
 
 const handleButtonClick = () => {
     appState.actionBar.handler?.();
+    appState.actionBar.retryVisible = false;
+    appState.actionBar.retryHandler = null;
     appState.actionBar.visible = false;
+};
+
+const handleRetryClick = () => {
+    const retryHandler = appState.actionBar.retryHandler;
+    appState.actionBar.visible = false;
+    retryHandler?.();
 };
 </script>
 
@@ -11,9 +19,14 @@ const handleButtonClick = () => {
     <div v-if="appState.actionBar.visible" class="actionbar-overlay">
         <div class="actionbar-content">
             <div class="actionbar-text">{{ appState.actionBar.message }}</div>
-            <button class="actionbar-btn" @click="handleButtonClick">
+            <div class="actionbar-actions">
+              <button class="actionbar-btn" @click="handleButtonClick">
                 {{ appState.actionBar.buttonText }}
-            </button>
+              </button>
+              <button v-if="appState.actionBar.retryVisible" class="actionbar-btn" @click="handleRetryClick">
+                重试
+              </button>
+            </div>
         </div>
     </div>
 </template>
@@ -61,7 +74,7 @@ const handleButtonClick = () => {
 
 .actionbar-btn {
     text-align: center;
-    width: 100%;
+    flex: 1;
     border-radius: 9999px;
     border: 1px solid white;
     padding: 12px;
@@ -82,6 +95,11 @@ const handleButtonClick = () => {
     &:active {
         opacity: 0.7;
     }
+}
+
+.actionbar-actions {
+    display: flex;
+    gap: 12px;
 }
 
 @keyframes fadeIn {

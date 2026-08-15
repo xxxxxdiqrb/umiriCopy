@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import type { ProviderConfig, CustomVariable } from "../types";
+import { JSON_SYSTEM_MESSAGE } from "../../shared/constants";
 
 const props = defineProps<{
   modelValue: boolean;
@@ -38,9 +39,7 @@ const parseValue = (value: string): string | number | boolean => {
   return value;
 };
 
-const buildCustomVarsObject = (
-  vars: CustomVariable[],
-): Record<string, unknown> => {
+const buildCustomVarsObject = (vars: CustomVariable[]): Record<string, unknown> => {
   const obj: Record<string, unknown> = {};
   for (const v of vars) {
     if (v.name.trim()) {
@@ -67,8 +66,7 @@ const testConfig = async () => {
   testResult.value = null;
 
   try {
-    const { baseUrl, apiKey, model, systemMessage, customVariables } =
-      formData.value;
+    const { baseUrl, apiKey, model, systemMessage, customVariables } = formData.value;
     const customVars = buildCustomVarsObject(customVariables);
 
     const response = await fetch(`${baseUrl}/chat/completions`, {
@@ -146,77 +144,44 @@ defineExpose({ onOpen });
         <button class="btn-close" @click="closeModal">×</button>
       </div>
       <div class="modal-body">
-        <div
-          v-if="testResult"
-          class="test-result"
-          :class="testResult.success ? 'success' : 'error'"
-        >
+        <div v-if="testResult" class="test-result" :class="testResult.success ? 'success' : 'error'">
           {{ testResult.message }}
         </div>
         <div class="form-group">
           <label>配置名称</label>
-          <input
-            v-model="formData.name"
-            type="text"
-            placeholder="如: DeepSeek"
-          />
+          <input v-model="formData.name" type="text" placeholder="如: DeepSeek" />
         </div>
         <div class="form-group">
           <label>API 地址</label>
-          <input
-            v-model="formData.baseUrl"
-            type="text"
-            placeholder="https://api.deepseek.com/v1"
-          />
+          <input v-model="formData.baseUrl" type="text" placeholder="https://api.deepseek.com/v1" />
         </div>
         <div class="form-group">
           <label>API Key</label>
-          <input
-            v-model="formData.apiKey"
-            type="password"
-            placeholder="sk-xxxxxxxx"
-          />
+          <input v-model="formData.apiKey" type="password" placeholder="sk-xxxxxxxx" />
         </div>
         <div class="form-group">
           <label>模型</label>
-          <input
-            v-model="formData.model"
-            type="text"
-            placeholder="deepseek-chat"
-          />
+          <input v-model="formData.model" type="text" placeholder="deepseek-chat" />
         </div>
         <div class="form-group">
           <label>System Message</label>
+          <p class="field-description">指定翻译风格和内容处理规则</p>
           <textarea v-model="formData.systemMessage" rows="4"></textarea>
+        </div>
+        <div class="form-group">
+          <label>JSON 输出约束（只读）</label>
+          <p class="field-description">格式约束，作为第二条 system message 发送</p>
+          <textarea :value="JSON_SYSTEM_MESSAGE" rows="4" readonly></textarea>
         </div>
         <div class="form-group">
           <label>自定义变量</label>
           <div class="custom-variables">
-            <div
-              v-for="(_, index) in formData.customVariables"
-              :key="index"
-              class="variable-row"
-            >
-              <input
-                v-model="formData.customVariables[index].name"
-                type="text"
-                placeholder="变量名"
-                class="var-name"
-              />
-              <input
-                v-model="formData.customVariables[index].value"
-                type="text"
-                placeholder="变量值"
-                class="var-value"
-              />
+            <div v-for="(_, index) in formData.customVariables" :key="index" class="variable-row">
+              <input v-model="formData.customVariables[index].name" type="text" placeholder="变量名" class="var-name" />
+              <input v-model="formData.customVariables[index].value" type="text" placeholder="变量值" class="var-value" />
               <button class="btn-remove" @click="removeVariable(index)">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path
-                    d="M4 4L12 12M12 4L4 12"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                  />
+                  <path d="M4 4L12 12M12 4L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                 </svg>
               </button>
             </div>
@@ -225,11 +190,7 @@ defineExpose({ onOpen });
         </div>
       </div>
       <div class="modal-footer">
-        <button
-          class="btn btn-outline"
-          @click="testConfig"
-          :disabled="isTesting"
-        >
+        <button class="btn btn-outline" @click="testConfig" :disabled="isTesting">
           {{ isTesting ? "测试中..." : "测试连接" }}
         </button>
         <button class="btn btn-outline" @click="closeModal">取消</button>
@@ -344,12 +305,10 @@ $danger: rgb(244, 33, 46);
     color: $text-primary;
     outline: none;
     box-sizing: border-box;
-    font-family:
-      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
-      sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 
     &:focus {
-      border-color: $accent;
+      border-color: $text-primary;
     }
 
     &::placeholder {
@@ -359,7 +318,19 @@ $danger: rgb(244, 33, 46);
 
   textarea {
     resize: vertical;
+
+    &[readonly] {
+      color: $text-secondary;
+      cursor: default;
+    }
   }
+}
+
+.field-description {
+  margin: -2px 0 8px;
+  color: $text-secondary;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .form-row {
@@ -414,9 +385,7 @@ $danger: rgb(244, 33, 46);
     border-radius: 8px;
     color: $text-primary;
     outline: none;
-    font-family:
-      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
-      sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 
     &:focus {
       border-color: $accent;
@@ -455,9 +424,7 @@ $danger: rgb(244, 33, 46);
   cursor: pointer;
   border-radius: 8px;
   transition: all 0.2s;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
-    sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 
   &:hover {
     border-color: $accent;
@@ -500,9 +467,7 @@ $danger: rgb(244, 33, 46);
   border-radius: 9999px;
   background: transparent;
   transition: background-color 0.2s;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
-    sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 
   &:disabled {
     opacity: 0.5;

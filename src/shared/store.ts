@@ -1,5 +1,6 @@
 import { reactive } from "vue";
-import type { ProviderConfig } from "../options/types";
+import { createDefaultProvider, type ProviderConfig } from "../options/types";
+import { JSON_SYSTEM_MESSAGE } from "./constants";
 
 export interface AppState {
   loading: {
@@ -11,6 +12,8 @@ export interface AppState {
     message: string;
     buttonText: string;
     handler: (() => void) | null;
+    retryVisible: boolean;
+    retryHandler: (() => void) | null;
   };
   previewDialog: {
     visible: boolean;
@@ -25,6 +28,7 @@ export interface AppState {
     model: string;
     baseUrl: string;
     systemMessage: string;
+    jsonSystemMessage: string;
     otherParam: Record<string, unknown>;
   };
   providers: ProviderConfig[];
@@ -38,7 +42,7 @@ export interface AppState {
 
 export const appState = reactive<AppState>({
   loading: { visible: false, text: "正在复制" },
-  actionBar: { visible: false, message: "", buttonText: "确定", handler: null },
+  actionBar: { visible: false, message: "", buttonText: "确定", handler: null, retryVisible: false, retryHandler: null },
   previewDialog: { visible: false, content: "" },
   selectMode: { active: false },
   selectedArticles: new Set(),
@@ -47,6 +51,7 @@ export const appState = reactive<AppState>({
     model: "",
     baseUrl: "",
     systemMessage: "",
+    jsonSystemMessage: JSON_SYSTEM_MESSAGE,
     otherParam: {},
   },
   providers: [],
@@ -76,8 +81,26 @@ export function applyProvider(provider: ProviderConfig) {
     model,
     baseUrl,
     systemMessage,
+    jsonSystemMessage: JSON_SYSTEM_MESSAGE,
     otherParam: { ...customVars },
   });
+}
+
+function normalizeProvider(provider: Partial<ProviderConfig>): ProviderConfig {
+  const defaults = createDefaultProvider();
+  return {
+    ...defaults,
+    ...provider,
+    id: provider.id || defaults.id,
+    name: provider.name || defaults.name,
+    baseUrl: provider.baseUrl || defaults.baseUrl,
+    apiKey: provider.apiKey || "",
+    model: provider.model || defaults.model,
+    systemMessage: provider.systemMessage || defaults.systemMessage,
+    customVariables: Array.isArray(provider.customVariables)
+      ? provider.customVariables
+      : defaults.customVariables,
+  };
 }
 
 export function showToast(
@@ -94,9 +117,9 @@ export async function refreshProvidersFromStorage() {
   if (stored?.providers) {
     let providers: ProviderConfig[] = [];
     if (Array.isArray(stored.providers)) {
-      providers = stored.providers;
+      providers = stored.providers.map((provider: Partial<ProviderConfig>) => normalizeProvider(provider));
     } else if (typeof stored.providers === "object") {
-      providers = Object.values(stored.providers);
+      providers = Object.values(stored.providers).map((provider) => normalizeProvider(provider as Partial<ProviderConfig>));
     }
 
     appState.providers = providers;
