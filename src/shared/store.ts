@@ -1,6 +1,12 @@
-import { reactive } from "vue";
+﻿import { reactive } from "vue";
 import { createDefaultProvider, type ProviderConfig } from "../options/types";
 import { JSON_SYSTEM_MESSAGE } from "./constants";
+
+export interface ActionBarAction {
+  label: string;
+  type?: "primary" | "secondary";
+  handler?: (() => void) | null;
+}
 
 export interface AppState {
   loading: {
@@ -14,6 +20,7 @@ export interface AppState {
     handler: (() => void) | null;
     retryVisible: boolean;
     retryHandler: (() => void) | null;
+    actions?: ActionBarAction[];
   };
   previewDialog: {
     visible: boolean;
@@ -42,7 +49,15 @@ export interface AppState {
 
 export const appState = reactive<AppState>({
   loading: { visible: false, text: "正在复制" },
-  actionBar: { visible: false, message: "", buttonText: "确定", handler: null, retryVisible: false, retryHandler: null },
+  actionBar: {
+    visible: false,
+    message: "",
+    buttonText: "确定",
+    handler: null,
+    retryVisible: false,
+    retryHandler: null,
+    actions: undefined,
+  },
   previewDialog: { visible: false, content: "" },
   selectMode: { active: false },
   selectedArticles: new Set(),
@@ -110,6 +125,35 @@ export function showToast(
   appState.toast.message = message;
   appState.toast.type = type;
   appState.toast.visible = true;
+}
+
+export interface ShowActionBarOptions {
+  message: string;
+  actions?: ActionBarAction[];
+  buttonText?: string;
+  handler?: (() => void) | null;
+  retryVisible?: boolean;
+  retryHandler?: (() => void) | null;
+}
+
+export function showActionBar(options: ShowActionBarOptions) {
+  appState.actionBar.message = options.message;
+  appState.actionBar.actions = options.actions;
+  appState.actionBar.buttonText = options.buttonText ?? "确定";
+  appState.actionBar.handler = options.handler ?? null;
+  appState.actionBar.retryVisible = options.retryVisible ?? false;
+  appState.actionBar.retryHandler = options.retryHandler ?? null;
+  appState.actionBar.visible = true;
+}
+
+export function closeActionBar() {
+  appState.actionBar.visible = false;
+  appState.actionBar.message = "";
+  appState.actionBar.actions = undefined;
+  appState.actionBar.buttonText = "确定";
+  appState.actionBar.handler = null;
+  appState.actionBar.retryVisible = false;
+  appState.actionBar.retryHandler = null;
 }
 
 export async function refreshProvidersFromStorage() {

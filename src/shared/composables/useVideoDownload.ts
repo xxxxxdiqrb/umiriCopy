@@ -1,4 +1,4 @@
-import { appState, showToast } from "../store";
+﻿import { appState, showToast, showActionBar } from "../store";
 import type { PlatformState } from "./createPlatformStore";
 import type { createArticleSelectorObserver } from "./createArticleSelectorObserver";
 
@@ -18,12 +18,10 @@ export function exitCopyState(
 
 export function showDownloadError(error: unknown): void {
   appState.loading.visible = false;
-  appState.actionBar.visible = true;
-  appState.actionBar.message = error instanceof Error ? error.message : "下载失败";
-  appState.actionBar.buttonText = "确定";
-  appState.actionBar.handler = null;
-  appState.actionBar.retryVisible = false;
-  appState.actionBar.retryHandler = null;
+  showActionBar({
+    message: error instanceof Error ? error.message : "下载失败",
+    buttonText: "确定",
+  });
 }
 
 export function createProgressCallback(prefix: string): VideoDownloadProgressCallback {

@@ -1,6 +1,6 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, watch, nextTick } from "vue";
-import { appState, showToast } from "../store";
+import { appState, showToast, showActionBar } from "../store";
 import twemoji from "twemoji";
 
 const editorRef = ref<HTMLDivElement | null>(null);
@@ -50,12 +50,10 @@ const handleCopy = async () => {
     showToast("复制成功");
     appState.previewDialog.visible = false;
   } catch (error) {
-    appState.actionBar.message = `复制失败: ${error instanceof Error ? error.message : "未知错误"}`;
-    appState.actionBar.buttonText = "确定";
-    appState.actionBar.handler = null;
-    appState.actionBar.retryVisible = false;
-    appState.actionBar.retryHandler = null;
-    appState.actionBar.visible = true;
+    showActionBar({
+      message: `复制失败: ${error instanceof Error ? error.message : "未知错误"}`,
+      buttonText: "确定",
+    });
   }
 };
 </script>

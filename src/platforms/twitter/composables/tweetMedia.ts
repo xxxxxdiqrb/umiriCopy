@@ -1,4 +1,4 @@
-import { appState } from "../../../shared/store";
+﻿import { appState } from "../../../shared/store";
 import { platformState } from "../platform";
 import { toPng } from "html-to-image";
 import { processImage, formatImageHtml, sleep } from "../../../shared/utils";
@@ -47,19 +47,28 @@ async function captureScreenshots(articleList: HTMLElement[], tweetName: string)
   return formatImageHtml(result);
 }
 
-function getImgElementList(divList: HTMLElement[]): HTMLImageElement[] {
-  const ariaLabelledbyDiv = divList.find((item) => item.getAttribute("aria-labelledby"));
+function getImgElementList(article: HTMLElement): HTMLImageElement[] {
+  const ariaLabelledbyDiv = article.querySelector<HTMLElement>("div[aria-labelledby]");
   const extraElement = ariaLabelledbyDiv?.children[0] as HTMLElement | undefined;
-  const span = extraElement?.querySelector("span");
 
   if (!ariaLabelledbyDiv || !extraElement) return [];
-  if (span && span.textContent !== "ALT" && span.parentElement?.nodeName !== "A") return [];
+
+  // 防止将引用块当成图片块
+  const time = extraElement?.querySelector("time");
+  if (time) return [];
+
+  // 有视频的部分会把视频的预览图也获取到，先这样处理看看
+  const presentationList = Array.from(extraElement.querySelectorAll('div[role="presentation"]'));
+  if (presentationList.length > 0) {
+    const imagePresentationList = presentationList.filter((item) => !item.querySelector("video"));
+    return imagePresentationList.map((item) => item.querySelector("img")).filter((item) => !!item);
+  }
 
   return Array.from(extraElement.querySelectorAll("img"));
 }
 
-async function extractTweetImages(divList: HTMLElement[], tweetName: string, startIndex: number, totalCount: number): Promise<string[]> {
-  const imgElementList = getImgElementList(divList);
+async function extractTweetImages(article: HTMLElement, tweetName: string, startIndex: number, totalCount: number): Promise<string[]> {
+  const imgElementList = getImgElementList(article);
   const images: string[] = [];
   let index = startIndex;
 
@@ -83,16 +92,14 @@ async function extractAllTweetImages(articleList: HTMLElement[]): Promise<string
   let totalCount = 0;
 
   for (const article of articleList) {
-    const divList = Array.from(article.querySelectorAll("div")) as HTMLElement[];
-    totalCount += getImgElementList(divList).length;
+    totalCount += getImgElementList(article).length;
   }
 
   for (const article of articleList) {
     article.scrollIntoView({ behavior: "instant", block: "center" });
     await sleep(200);
     const tweetName = getTweetName(article);
-    const divList = Array.from(article.querySelectorAll("div")) as HTMLElement[];
-    const images = await extractTweetImages(divList, tweetName, globalIndex, totalCount);
+    const images = await extractTweetImages(article, tweetName, globalIndex, totalCount);
     globalIndex += images.length;
     allImages.push(...images);
   }

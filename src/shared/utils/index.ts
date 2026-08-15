@@ -48,6 +48,7 @@ export async function translateTextItems(items: TranslationTextItem[], translate
     };
     const data = await sendChromeMessage("GMFetch", { url: appState.options.baseUrl + "/chat/completions", option: fetchParam, formatType: "json" });
     const translated: unknown = JSON.parse(data.choices[0].message.content);
+    console.log(translated);
     if (!Array.isArray(translated) || translated.length !== items.length || translated.some((item) => typeof item !== "string")) {
       throw new Error("LLM返回内容错误，请重试");
     }

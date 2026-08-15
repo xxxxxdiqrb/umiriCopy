@@ -1,4 +1,4 @@
-import { appState, showToast } from "../store";
+﻿import { appState, showToast, showActionBar, closeActionBar } from "../store";
 import type { PlatformState } from "./createPlatformStore";
 
 export interface UsePlatformCopyOptions {
@@ -50,14 +50,9 @@ export function usePlatformCopy(options: UsePlatformCopyOptions) {
 
     let retryArticles: HTMLElement[] | null = null;
 
-    const clearActionBarRetry = () => {
-        appState.actionBar.retryVisible = false;
-        appState.actionBar.retryHandler = null;
-    };
-
     const handleCancel = () => {
         retryArticles = null;
-        clearActionBarRetry();
+        closeActionBar();
         platformState.configBar.visible = false;
         appState.selectMode.active = false;
         appState.selectedArticles.clear();
@@ -73,7 +68,7 @@ export function usePlatformCopy(options: UsePlatformCopyOptions) {
             appState.previewDialog.content = copyString;
             appState.previewDialog.visible = true;
             retryArticles = null;
-            clearActionBarRetry();
+            closeActionBar();
         } catch (e) {
             console.error(e);
             const stage = appState.loading.text;
@@ -84,15 +79,26 @@ export function usePlatformCopy(options: UsePlatformCopyOptions) {
                     : stage.includes("图片")
                         ? "图片下载"
                         : "资源获取";
-            appState.actionBar.message = `${stageName}失败：${getErrorMessage(e)}`;
-            appState.actionBar.buttonText = "确定";
-            appState.actionBar.handler = null;
             retryArticles = articles;
-            appState.actionBar.retryVisible = true;
-            appState.actionBar.retryHandler = () => {
-                if (retryArticles) void executeCopy(retryArticles);
-            };
-            appState.actionBar.visible = true;
+            showActionBar({
+                message: `${stageName}失败：${getErrorMessage(e)}`,
+                actions: [
+                    {
+                        label: "取消",
+                        type: "secondary",
+                        handler: () => {
+                            retryArticles = null;
+                        },
+                    },
+                    {
+                        label: "重试",
+                        type: "primary",
+                        handler: () => {
+                            if (retryArticles) void executeCopy(retryArticles);
+                        },
+                    },
+                ],
+            });
         } finally {
             appState.loading.visible = false;
             platformState.configBar.visible = false;
