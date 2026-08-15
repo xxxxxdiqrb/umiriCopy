@@ -18,17 +18,12 @@ export function getTweetUserName(article: HTMLElement): string {
   if (!userInfoElement) {
     return "unknown";
   }
-  const userNameElement = document.evaluate(
-    `//span[text()="${userInfoElement.children[0].textContent}"]`,
-    userInfoElement,
-    null,
-    XPathResult.FIRST_ORDERED_NODE_TYPE,
-    null,
-  ).singleNodeValue as HTMLElement;
+  const userNameText = userInfoElement.children[0].textContent;
+  const userNameElement = Array.from(userInfoElement.querySelectorAll("span")).find((item) => item.textContent === userNameText);
   if (!userNameElement) {
     return "unknown";
   }
-  return extractTweetTextContent(userNameElement.parentElement as HTMLElement);
+  return extractTweetTextContent(userNameElement as HTMLElement);
 }
 
 export function getTweetTime(article: HTMLElement): Date {
