@@ -1,13 +1,20 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted, nextTick } from "vue";
-import type { ProviderConfig, OptionsData } from "./types";
-import { createDefaultProvider } from "./types";
+import type { ProviderConfig, OptionsData, PlatformConfigs } from "./types";
+import { createDefaultProvider, DEFAULT_PLATFORM_CONFIGS } from "./types";
 import ProviderCard from "./components/ProviderCard.vue";
 import ProviderModal from "./components/ProviderModal.vue";
+import PlatformSettingsCard from "./components/PlatformSettingsCard.vue";
+
+const activeTab = ref<"providers" | "platforms">("providers");
 
 const options = ref<OptionsData>({
   providers: [],
   defaultProviderId: null,
+  platformConfigs: {
+    twitter: { ...DEFAULT_PLATFORM_CONFIGS.twitter },
+    instagram: { ...DEFAULT_PLATFORM_CONFIGS.instagram },
+  },
 });
 
 const showModal = ref(false);
@@ -25,9 +32,23 @@ onMounted(async () => {
     } else if (loaded.providers && typeof loaded.providers === "object") {
       providers = Object.values(loaded.providers);
     }
+
+    const loadedPlatformConfigs = loaded.platformConfigs || {};
+    const platformConfigs: PlatformConfigs = {
+      twitter: {
+        ...DEFAULT_PLATFORM_CONFIGS.twitter,
+        ...(loadedPlatformConfigs.twitter || {}),
+      },
+      instagram: {
+        ...DEFAULT_PLATFORM_CONFIGS.instagram,
+        ...(loadedPlatformConfigs.instagram || {}),
+      },
+    };
+
     options.value = {
       providers,
       defaultProviderId: loaded.defaultProviderId ?? null,
+      platformConfigs,
     };
   }
 });
@@ -95,29 +116,73 @@ const setAsDefault = async (provider: ProviderConfig) => {
 <template>
   <div class="container">
     <div class="header">
-      <span class="app-name">AI 配置管理</span>
+      <span class="app-name">扩展配置管理</span>
     </div>
-    <button class="add-btn" @click="openAddModal">
-      <svg viewBox="0 0 24 24" class="add-icon" aria-hidden="true">
-        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-      </svg>
-      <span class="btn-text">添加配置</span>
-    </button>
 
-    <div class="provider-list">
-      <div v-if="options.providers.length === 0" class="empty-state">
-        暂无配置，点击上方按钮添加
+    <!-- 选项卡导航 -->
+    <div class="tabs">
+      <button
+        class="tab-btn"
+        :class="{ active: activeTab === 'providers' }"
+        @click="activeTab = 'providers'"
+      >
+        AI 翻译服务
+      </button>
+      <button
+        class="tab-btn"
+        :class="{ active: activeTab === 'platforms' }"
+        @click="activeTab = 'platforms'"
+      >
+        平台默认配置
+      </button>
+    </div>
+
+    <!-- AI 翻译配置板块 -->
+    <div v-show="activeTab === 'providers'" class="tab-content">
+      <button class="add-btn" @click="openAddModal">
+        <svg viewBox="0 0 24 24" class="add-icon" aria-hidden="true">
+          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+        </svg>
+        <span class="btn-text">添加翻译配置</span>
+      </button>
+
+      <div class="provider-list">
+        <div v-if="options.providers.length === 0" class="empty-state">
+          暂无配置，点击上方按钮添加
+        </div>
+
+        <ProviderCard
+          v-for="provider in options.providers"
+          :key="provider.id"
+          :provider="provider"
+          :is-default="provider.id === options.defaultProviderId"
+          @edit="openEditModal"
+          @delete="deleteProvider"
+          @set-default="setAsDefault"
+        />
       </div>
+    </div>
 
-      <ProviderCard
-        v-for="provider in options.providers"
-        :key="provider.id"
-        :provider="provider"
-        :is-default="provider.id === options.defaultProviderId"
-        @edit="openEditModal"
-        @delete="deleteProvider"
-        @set-default="setAsDefault"
-      />
+    <!-- 平台默认配置板块 -->
+    <div v-show="activeTab === 'platforms'" class="tab-content">
+      <div v-if="options.platformConfigs" class="platforms-list">
+        <PlatformSettingsCard
+          v-model="options.platformConfigs.twitter"
+          title="X (Twitter) 默认选项"
+          platform-key="twitter"
+          :providers="options.providers"
+          has-screenshot
+          @change="saveOptions"
+        />
+
+        <PlatformSettingsCard
+          v-model="options.platformConfigs.instagram"
+          title="Instagram 默认选项"
+          platform-key="instagram"
+          :providers="options.providers"
+          @change="saveOptions"
+        />
+      </div>
     </div>
 
     <ProviderModal
@@ -153,13 +218,47 @@ $accent-hover: rgb(26, 140, 216);
 }
 
 .header {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .app-name {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 800;
   color: $text-primary;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid $border-color;
+  margin-bottom: 20px;
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  padding: 10px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  color: $text-secondary;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  font-family: inherit;
+
+  &:hover {
+    color: $text-primary;
+  }
+
+  &.active {
+    color: $text-primary;
+    border-bottom-color: $text-primary;
+  }
+}
+
+.tab-content {
+  display: flex;
+  flex-direction: column;
 }
 
 .add-btn {
@@ -176,9 +275,7 @@ $accent-hover: rgb(26, 140, 216);
   cursor: pointer;
   user-select: none;
   transition: background-color 0.2s;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
-    sans-serif;
+  font-family: inherit;
   margin-bottom: 20px;
 
   &:hover {
@@ -204,10 +301,11 @@ $accent-hover: rgb(26, 140, 216);
   white-space: nowrap;
 }
 
-.provider-list {
+.provider-list,
+.platforms-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
 .empty-state {

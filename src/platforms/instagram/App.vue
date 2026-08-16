@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed } from "vue";
 import LoadingPanel from "../../shared/components/LoadingPanel.vue";
 import ActionBar from "../../shared/components/ActionBar.vue";
@@ -8,7 +8,7 @@ import FloatingCopyButton from "../../shared/components/FloatingCopyButton.vue";
 import ConfigBar from "../../shared/components/ConfigBar.vue";
 import { appState, refreshProvidersFromStorage } from "../../shared/store";
 import { usePlatformCopy } from "../../shared/composables/usePlatformCopy";
-import { platformState, configItems, updateConfig, observer } from "./platform";
+import { platformState, configItems, updateConfig, observer, loadPlatformConfig } from "./platform";
 import { copyInstagram } from "./composables/useCopyInstagram";
 import { handleDownloadVideo } from "./composables/videoHandler";
 
@@ -22,6 +22,7 @@ const { handleCancel, handleSubmit, handleUpdateItem } = usePlatformCopy({
 
 const handleFloatingButtonClick = async () => {
   await refreshProvidersFromStorage();
+  await loadPlatformConfig();
   platformState.configBar.visible = true;
   appState.selectMode.active = true;
   observer.mountSelectorsToAllArticles();

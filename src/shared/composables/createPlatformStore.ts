@@ -1,5 +1,6 @@
-import { reactive, computed } from "vue";
+﻿import { reactive, computed } from "vue";
 import { appState, applyProvider } from "../store";
+import { DEFAULT_PLATFORM_CONFIGS, type PlatformSettings } from "../../options/types";
 import type { ConfigItem } from "../types";
 
 export interface PlatformState {
@@ -13,17 +14,65 @@ export interface PlatformState {
   };
 }
 
-export function createPlatformStore(platform?: string) {
+export async function getPlatformSettingsFromStorage(platform: "twitter" | "instagram"): Promise<PlatformSettings> {
+  const fallbackDefaults = DEFAULT_PLATFORM_CONFIGS[platform];
+  try {
+    const stored = (await chrome.storage.local.get("options"))?.options;
+    const platformConfig = stored?.platformConfigs?.[platform];
+    if (platformConfig && typeof platformConfig === "object") {
+      return {
+        translate: typeof platformConfig.translate === "boolean" ? platformConfig.translate : fallbackDefaults.translate,
+        copyImages: typeof platformConfig.copyImages === "boolean" ? platformConfig.copyImages : fallbackDefaults.copyImages,
+        download: typeof platformConfig.download === "boolean" ? platformConfig.download : fallbackDefaults.download,
+        captureScreenshot:
+          platform === "twitter"
+            ? typeof platformConfig.captureScreenshot === "boolean"
+              ? platformConfig.captureScreenshot
+              : (fallbackDefaults.captureScreenshot ?? true)
+            : undefined,
+        providerId: platformConfig.providerId ?? null,
+      };
+    }
+  } catch (e) {
+    console.error("Failed to read platform config from storage, using defaults:", e);
+  }
+  return { ...fallbackDefaults };
+}
+
+export function createPlatformStore(platform: "twitter" | "instagram") {
+    const fallback = DEFAULT_PLATFORM_CONFIGS[platform];
     const platformState = reactive<PlatformState>({
         configBar: {
             visible: false,
-            translate: true,
-            captureScreenshot: true,
-            copyImages: true,
-            download: false,
-            selectedProviderId: null,
+            translate: fallback.translate,
+            captureScreenshot: fallback.captureScreenshot ?? true,
+            copyImages: fallback.copyImages,
+            download: fallback.download,
+            selectedProviderId: fallback.providerId ?? null,
         },
     });
+
+    async function loadPlatformConfig() {
+        const settings = await getPlatformSettingsFromStorage(platform);
+        platformState.configBar.translate = settings.translate;
+        platformState.configBar.copyImages = settings.copyImages;
+        platformState.configBar.download = settings.download;
+        if (platform === "twitter" && settings.captureScreenshot !== undefined) {
+            platformState.configBar.captureScreenshot = settings.captureScreenshot;
+        }
+
+        // 优先使用该平台独立指定的翻译服务，若无则回退到全局 defaultProviderId 或第一个可用服务
+        const providerId = settings.providerId || appState.defaultProviderId;
+        const matchedProvider =
+          appState.providers.find((p) => p.id === providerId) || appState.providers[0];
+
+        if (matchedProvider) {
+            platformState.configBar.selectedProviderId = matchedProvider.id;
+            applyProvider(matchedProvider);
+        } else {
+            platformState.configBar.selectedProviderId = null;
+        }
+    }
 
     const configItems = computed<ConfigItem[]>(() => [
         {
@@ -101,5 +150,5 @@ export function createPlatformStore(platform?: string) {
         }
     }
 
-    return { platformState, configItems, updateConfig };
+    return { platformState, configItems, updateConfig, loadPlatformConfig };
 }
