@@ -10,6 +10,7 @@ export interface ProviderConfig {
   apiKey: string;
   model: string;
   systemMessage: string;
+  suffix?: string;
   customVariables: CustomVariable[];
 }
 
@@ -58,6 +59,7 @@ export const createDefaultProvider = (): ProviderConfig => ({
   apiKey: "",
   model: "deepseek-v4-flash",
   systemMessage: DEFAULT_SYSTEM_MESSAGE,
+  suffix: "",
   customVariables: [
     { name: "temperature", value: "1.3" },
     { name: "stream", value: "false" },

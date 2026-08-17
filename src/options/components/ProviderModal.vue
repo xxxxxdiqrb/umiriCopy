@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, computed } from "vue";
 import type { ProviderConfig, CustomVariable } from "../types";
 import { JSON_SYSTEM_MESSAGE } from "../../shared/constants";
@@ -116,6 +116,7 @@ const save = () => {
   if (!formData.value) return;
   emit("save", {
     ...formData.value,
+    suffix: formData.value.suffix || "",
     customVariables: [...formData.value.customVariables],
   });
   closeModal();
@@ -127,6 +128,7 @@ const onOpen = () => {
     const customVariables = props.provider.customVariables || [];
     formData.value = {
       ...props.provider,
+      suffix: props.provider.suffix || "",
       customVariables: Object.values(customVariables).map((v) => ({ ...v })),
     };
   }
@@ -172,6 +174,11 @@ defineExpose({ onOpen });
           <label>JSON 输出约束（只读）</label>
           <p class="field-description">格式约束，作为第二条 system message 发送</p>
           <textarea :value="JSON_SYSTEM_MESSAGE" rows="4" readonly></textarea>
+        </div>
+        <div class="form-group">
+          <label>附带后缀</label>
+          <p class="field-description">翻译成功后将自动追加在译文最后一行（换行追加）</p>
+          <textarea v-model="formData.suffix" rows="2" placeholder="如：[由 AI 自动翻译] 或 自定义署名说明"></textarea>
         </div>
         <div class="form-group">
           <label>自定义变量</label>

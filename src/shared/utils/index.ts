@@ -1,4 +1,4 @@
-import { appState } from "../store";
+﻿import { appState } from "../store";
 
 export interface TranslationTextItem {
   header: string;
@@ -54,7 +54,11 @@ export async function translateTextItems(items: TranslationTextItem[], translate
     }
     contents = translated;
   }
-  return items.map((item, index) => `${item.header}${contents[index]}`).join(separator);
+  const resultText = items.map((item, index) => `${item.header}${contents[index]}`).join(separator);
+  if (translate && appState.options.suffix?.trim()) {
+    return `${resultText}\n${appState.options.suffix.trim()}`;
+  }
+  return resultText;
 }
 
 export function createElement<T extends Element = Element>(htmlString: string): T {

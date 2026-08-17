@@ -35,6 +35,7 @@ export interface AppState {
     model: string;
     baseUrl: string;
     systemMessage: string;
+    suffix: string;
     jsonSystemMessage: string;
     otherParam: Record<string, unknown>;
   };
@@ -66,6 +67,7 @@ export const appState = reactive<AppState>({
     model: "",
     baseUrl: "",
     systemMessage: "",
+    suffix: "",
     jsonSystemMessage: JSON_SYSTEM_MESSAGE,
     otherParam: {},
   },
@@ -75,7 +77,7 @@ export const appState = reactive<AppState>({
 });
 
 export function applyProvider(provider: ProviderConfig) {
-  const { apiKey, model, baseUrl, systemMessage, customVariables } = provider;
+  const { apiKey, model, baseUrl, systemMessage, suffix, customVariables } = provider;
   const customVars: Record<string, unknown> = {};
   if (customVariables && Array.isArray(customVariables)) {
     for (const v of customVariables) {
@@ -96,6 +98,7 @@ export function applyProvider(provider: ProviderConfig) {
     model,
     baseUrl,
     systemMessage,
+    suffix: suffix ?? "",
     jsonSystemMessage: JSON_SYSTEM_MESSAGE,
     otherParam: { ...customVars },
   });
@@ -112,6 +115,7 @@ function normalizeProvider(provider: Partial<ProviderConfig>): ProviderConfig {
     apiKey: provider.apiKey || "",
     model: provider.model || defaults.model,
     systemMessage: provider.systemMessage || defaults.systemMessage,
+    suffix: provider.suffix !== undefined ? provider.suffix : (defaults.suffix || ""),
     customVariables: Array.isArray(provider.customVariables)
       ? provider.customVariables
       : defaults.customVariables,
