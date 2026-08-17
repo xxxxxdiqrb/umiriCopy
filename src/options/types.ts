@@ -1,4 +1,4 @@
-﻿export interface CustomVariable {
+export interface CustomVariable {
   name: string;
   value: string;
 }
@@ -30,7 +30,13 @@ export interface PlatformConfigs {
 export interface OptionsData {
   providers: ProviderConfig[];
   defaultProviderId: string | null;
-  platformConfigs?: Partial<PlatformConfigs>;
+  platformConfigs?: PlatformConfigs;
+}
+
+export interface ExportedOptionsData {
+  version: string;
+  exportedAt: string;
+  data: OptionsData;
 }
 
 export const DEFAULT_PLATFORM_CONFIGS: PlatformConfigs = {
@@ -50,7 +56,7 @@ export const DEFAULT_PLATFORM_CONFIGS: PlatformConfigs = {
 };
 
 export const DEFAULT_SYSTEM_MESSAGE =
-  "发送的所有日语语言的消息均要求翻译为简体中文，不要加入任何的注释、延伸、翻译注解和翻译说明，也不要加入回应。标签不用翻译，原文如果有emoji表情请保留。请一直遵守这条规则，直到发出终止指令为止。";
+  "将提交的推特内容翻译为中文，不要修改原文，不要加入任何的注释和说明，不需要翻译hashtag，保留原文的emoji与特殊字符";
 
 export const createDefaultProvider = (): ProviderConfig => ({
   id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
@@ -65,3 +71,84 @@ export const createDefaultProvider = (): ProviderConfig => ({
     { name: "stream", value: "false" },
   ],
 });
+
+export function normalizeProviderConfig(provider: Partial<ProviderConfig>): ProviderConfig {
+  const defaults = createDefaultProvider();
+  const customVariables: CustomVariable[] = [];
+
+  if (Array.isArray(provider.customVariables)) {
+    for (const item of provider.customVariables) {
+      if (item && typeof item === "object" && "name" in item && "value" in item) {
+        customVariables.push({
+          name: String(item.name ?? ""),
+          value: String(item.value ?? ""),
+        });
+      }
+    }
+  } else {
+    customVariables.push(...defaults.customVariables.map((v) => ({ ...v })));
+  }
+
+  return {
+    id: typeof provider.id === "string" && provider.id.trim() ? provider.id : defaults.id,
+    name: typeof provider.name === "string" && provider.name.trim() ? provider.name : defaults.name,
+    baseUrl: typeof provider.baseUrl === "string" ? provider.baseUrl : defaults.baseUrl,
+    apiKey: typeof provider.apiKey === "string" ? provider.apiKey : defaults.apiKey,
+    model: typeof provider.model === "string" ? provider.model : defaults.model,
+    systemMessage: typeof provider.systemMessage === "string" ? provider.systemMessage : defaults.systemMessage,
+    suffix: typeof provider.suffix === "string" ? provider.suffix : defaults.suffix || "",
+    customVariables,
+  };
+}
+
+export function normalizePlatformSettings(settings: Partial<PlatformSettings> | undefined, fallback: PlatformSettings): PlatformSettings {
+  return {
+    translate: typeof settings?.translate === "boolean" ? settings.translate : fallback.translate,
+    copyImages: typeof settings?.copyImages === "boolean" ? settings.copyImages : fallback.copyImages,
+    download: typeof settings?.download === "boolean" ? settings.download : fallback.download,
+    captureScreenshot:
+      fallback.captureScreenshot !== undefined
+        ? typeof settings?.captureScreenshot === "boolean"
+          ? settings.captureScreenshot
+          : fallback.captureScreenshot
+        : undefined,
+    providerId: typeof settings?.providerId === "string" || settings?.providerId === null ? settings.providerId : fallback.providerId,
+  };
+}
+
+export function sanitizeOptionsData(raw: unknown): OptionsData {
+  if (!raw || typeof raw !== "object") {
+    return {
+      providers: [],
+      defaultProviderId: null,
+      platformConfigs: { ...DEFAULT_PLATFORM_CONFIGS },
+    };
+  }
+
+  const obj = raw as Record<string, unknown>;
+  const rawData = (obj.data && typeof obj.data === "object" ? obj.data : obj) as Partial<OptionsData>;
+
+  let providers: ProviderConfig[] = [];
+  if (Array.isArray(rawData.providers)) {
+    providers = rawData.providers.map((p) => normalizeProviderConfig(p || {}));
+  } else if (rawData.providers && typeof rawData.providers === "object") {
+    providers = Object.values(rawData.providers).map((p) => normalizeProviderConfig((p as Partial<ProviderConfig>) || {}));
+  }
+
+  const rawPlatformConfigs = (rawData.platformConfigs || {}) as Partial<PlatformConfigs>;
+  const platformConfigs: PlatformConfigs = {
+    twitter: normalizePlatformSettings(rawPlatformConfigs.twitter, DEFAULT_PLATFORM_CONFIGS.twitter),
+    instagram: normalizePlatformSettings(rawPlatformConfigs.instagram, DEFAULT_PLATFORM_CONFIGS.instagram),
+  };
+
+  const defaultProviderId =
+    typeof rawData.defaultProviderId === "string" && providers.some((p) => p.id === rawData.defaultProviderId)
+      ? rawData.defaultProviderId
+      : (providers[0]?.id ?? null);
+
+  return {
+    providers,
+    defaultProviderId,
+    platformConfigs,
+  };
+}

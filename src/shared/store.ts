@@ -1,5 +1,5 @@
 ﻿import { reactive } from "vue";
-import { createDefaultProvider, type ProviderConfig } from "../options/types";
+import { normalizeProviderConfig, type ProviderConfig } from "../options/types";
 import { JSON_SYSTEM_MESSAGE } from "./constants";
 
 export interface ActionBarAction {
@@ -104,24 +104,6 @@ export function applyProvider(provider: ProviderConfig) {
   });
 }
 
-function normalizeProvider(provider: Partial<ProviderConfig>): ProviderConfig {
-  const defaults = createDefaultProvider();
-  return {
-    ...defaults,
-    ...provider,
-    id: provider.id || defaults.id,
-    name: provider.name || defaults.name,
-    baseUrl: provider.baseUrl || defaults.baseUrl,
-    apiKey: provider.apiKey || "",
-    model: provider.model || defaults.model,
-    systemMessage: provider.systemMessage || defaults.systemMessage,
-    suffix: provider.suffix !== undefined ? provider.suffix : (defaults.suffix || ""),
-    customVariables: Array.isArray(provider.customVariables)
-      ? provider.customVariables
-      : defaults.customVariables,
-  };
-}
-
 export function showToast(
   message: string,
   type: "success" | "error" = "success",
@@ -165,9 +147,9 @@ export async function refreshProvidersFromStorage() {
   if (stored?.providers) {
     let providers: ProviderConfig[] = [];
     if (Array.isArray(stored.providers)) {
-      providers = stored.providers.map((provider: Partial<ProviderConfig>) => normalizeProvider(provider));
+      providers = stored.providers.map((provider: Partial<ProviderConfig>) => normalizeProviderConfig(provider));
     } else if (typeof stored.providers === "object") {
-      providers = Object.values(stored.providers).map((provider) => normalizeProvider(provider as Partial<ProviderConfig>));
+      providers = Object.values(stored.providers).map((provider) => normalizeProviderConfig(provider as Partial<ProviderConfig>));
     }
 
     appState.providers = providers;

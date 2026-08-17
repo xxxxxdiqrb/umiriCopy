@@ -1,7 +1,7 @@
 ﻿<script setup lang="ts">
 import { ref, onMounted, nextTick } from "vue";
-import type { ProviderConfig, OptionsData, PlatformConfigs } from "./types";
-import { createDefaultProvider, DEFAULT_PLATFORM_CONFIGS } from "./types";
+import type { ProviderConfig, OptionsData, ExportedOptionsData } from "./types";
+import { createDefaultProvider, DEFAULT_PLATFORM_CONFIGS, sanitizeOptionsData } from "./types";
 import ProviderCard from "./components/ProviderCard.vue";
 import ProviderModal from "./components/ProviderModal.vue";
 import PlatformSettingsCard from "./components/PlatformSettingsCard.vue";
@@ -20,36 +20,25 @@ const options = ref<OptionsData>({
 const showModal = ref(false);
 const editingProvider = ref<ProviderConfig | null>(null);
 const modalRef = ref<InstanceType<typeof ProviderModal> | null>(null);
+const fileInputRef = ref<HTMLInputElement | null>(null);
+
+const toastMessage = ref("");
+const showToast = ref(false);
+let toastTimer: number | null = null;
+
+const displayToast = (msg: string) => {
+  toastMessage.value = msg;
+  showToast.value = true;
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => {
+    showToast.value = false;
+  }, 2500);
+};
 
 onMounted(async () => {
   const result = await chrome.storage.local.get("options");
-  console.log(result);
   if (result.options) {
-    const loaded = result.options;
-    let providers: ProviderConfig[] = [];
-    if (Array.isArray(loaded.providers)) {
-      providers = loaded.providers;
-    } else if (loaded.providers && typeof loaded.providers === "object") {
-      providers = Object.values(loaded.providers);
-    }
-
-    const loadedPlatformConfigs = loaded.platformConfigs || {};
-    const platformConfigs: PlatformConfigs = {
-      twitter: {
-        ...DEFAULT_PLATFORM_CONFIGS.twitter,
-        ...(loadedPlatformConfigs.twitter || {}),
-      },
-      instagram: {
-        ...DEFAULT_PLATFORM_CONFIGS.instagram,
-        ...(loadedPlatformConfigs.instagram || {}),
-      },
-    };
-
-    options.value = {
-      providers,
-      defaultProviderId: loaded.defaultProviderId ?? null,
-      platformConfigs,
-    };
+    options.value = sanitizeOptionsData(result.options);
   }
 });
 
@@ -77,9 +66,7 @@ const closeModal = () => {
 };
 
 const saveProvider = async (provider: ProviderConfig) => {
-  const existingIndex = options.value.providers.findIndex(
-    (p) => p.id === provider.id,
-  );
+  const existingIndex = options.value.providers.findIndex((p) => p.id === provider.id);
 
   if (existingIndex >= 0) {
     options.value.providers[existingIndex] = { ...provider };
@@ -111,30 +98,95 @@ const setAsDefault = async (provider: ProviderConfig) => {
   options.value.defaultProviderId = provider.id;
   await saveOptions();
 };
+
+const exportConfig = () => {
+  try {
+    const manifest = chrome.runtime.getManifest();
+    const exportData: ExportedOptionsData = {
+      version: manifest?.version || "0.1.4",
+      exportedAt: new Date().toISOString(),
+      data: JSON.parse(JSON.stringify(options.value)),
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+      type: "application/json;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    a.href = url;
+    a.download = `umiriCopy-config-${dateStr}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    displayToast("配置已成功导出");
+  } catch (error) {
+    alert(`导出失败: ${error instanceof Error ? error.message : String(error)}`);
+  }
+};
+
+const triggerImport = () => {
+  fileInputRef.value?.click();
+};
+
+const handleImportFile = async (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+  if (!file) return;
+
+  try {
+    const text = await file.text();
+    const raw = JSON.parse(text);
+    const sanitized = sanitizeOptionsData(raw);
+
+    if (!confirm("导入将覆盖当前全部配置，是否继续？")) {
+      target.value = "";
+      return;
+    }
+
+    options.value = sanitized;
+    await saveOptions();
+    displayToast("配置已成功导入并保存");
+  } catch (error) {
+    alert(`导入失败，配置文件格式不正确: ${error instanceof Error ? error.message : String(error)}`);
+  } finally {
+    target.value = "";
+  }
+};
 </script>
 
 <template>
   <div class="container">
     <div class="header">
       <span class="app-name">扩展配置管理</span>
+      <div class="header-actions">
+        <input ref="fileInputRef" type="file" accept=".json" class="hidden-file-input" @change="handleImportFile" />
+        <button class="header-btn" title="导入配置文件" @click="triggerImport">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="btn-svg" aria-hidden="true">
+            <path
+              d="M256 32c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 210.7-41.4-41.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l96 96c12.5 12.5 32.8 12.5 45.3 0l96-96c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 242.7 256 32zM64 320c-35.3 0-64 28.7-64 64l0 32c0 35.3 28.7 64 64 64l320 0c35.3 0 64-28.7 64-64l0-32c0-35.3-28.7-64-64-64l-46.9 0-56.6 56.6c-31.2 31.2-81.9 31.2-113.1 0L110.9 320 64 320zm304 56a24 24 0 1 1 0 48 24 24 0 1 1 0-48z"
+            />
+          </svg>
+          <span>导入配置</span>
+        </button>
+        <button class="header-btn" title="导出配置文件为 JSON" @click="exportConfig">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="btn-svg" aria-hidden="true">
+            <path
+              d="M256 109.3L256 320c0 17.7-14.3 32-32 32s-32-14.3-32-32l0-210.7-41.4 41.4c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l96-96c12.5-12.5 32.8-12.5 45.3 0l96 96c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L256 109.3zM224 400c44.2 0 80-35.8 80-80l80 0c35.3 0 64 28.7 64 64l0 32c0 35.3-28.7 64-64 64L64 480c-35.3 0-64-28.7-64-64l0-32c0-35.3 28.7-64 64-64l80 0c0 44.2 35.8 80 80 80zm144 24a24 24 0 1 0 0-48 24 24 0 1 0 0 48z"
+            />
+          </svg>
+          <span>导出配置</span>
+        </button>
+      </div>
+    </div>
+
+    <div v-if="showToast" class="toast-banner">
+      {{ toastMessage }}
     </div>
 
     <!-- 选项卡导航 -->
     <div class="tabs">
-      <button
-        class="tab-btn"
-        :class="{ active: activeTab === 'providers' }"
-        @click="activeTab = 'providers'"
-      >
-        AI 翻译服务
-      </button>
-      <button
-        class="tab-btn"
-        :class="{ active: activeTab === 'platforms' }"
-        @click="activeTab = 'platforms'"
-      >
-        平台默认配置
-      </button>
+      <button class="tab-btn" :class="{ active: activeTab === 'providers' }" @click="activeTab = 'providers'">AI 翻译服务</button>
+      <button class="tab-btn" :class="{ active: activeTab === 'platforms' }" @click="activeTab = 'platforms'">平台默认配置</button>
     </div>
 
     <!-- AI 翻译配置板块 -->
@@ -147,9 +199,7 @@ const setAsDefault = async (provider: ProviderConfig) => {
       </button>
 
       <div class="provider-list">
-        <div v-if="options.providers.length === 0" class="empty-state">
-          暂无配置，点击上方按钮添加
-        </div>
+        <div v-if="options.providers.length === 0" class="empty-state">暂无配置，点击上方按钮添加</div>
 
         <ProviderCard
           v-for="provider in options.providers"
@@ -185,13 +235,7 @@ const setAsDefault = async (provider: ProviderConfig) => {
       </div>
     </div>
 
-    <ProviderModal
-      ref="modalRef"
-      v-model="showModal"
-      :provider="editingProvider"
-      :existing-providers="options.providers"
-      @save="saveProvider"
-    />
+    <ProviderModal ref="modalRef" v-model="showModal" :provider="editingProvider" :existing-providers="options.providers" @save="saveProvider" />
   </div>
 </template>
 
@@ -212,13 +256,79 @@ $accent-hover: rgb(26, 140, 216);
   max-width: 1024px;
   margin: 0 auto;
   box-sizing: border-box;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
-    sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.hidden-file-input {
+  display: none;
+}
+
+.header-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid $border-color;
+  border-radius: 9999px;
+  background: transparent;
+  color: $text-primary;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+
+  &:hover {
+    background: rgba(15, 20, 25, 0.05);
+    border-color: rgba(15, 20, 25, 0.2);
+  }
+
+  &:active {
+    background: rgba(15, 20, 25, 0.1);
+  }
+
+  .btn-svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+    flex-shrink: 0;
+  }
+}
+
+.toast-banner {
+  margin-bottom: 16px;
+  padding: 10px 16px;
+  background: rgba(0, 186, 124, 0.1);
+  border: 1px solid rgba(0, 186, 124, 0.3);
+  color: rgb(0, 186, 124);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .app-name {
