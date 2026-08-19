@@ -1,3 +1,5 @@
+﻿import { JSON_SYSTEM_MESSAGE } from "../shared/constants";
+
 export interface CustomVariable {
   name: string;
   value: string;
@@ -10,8 +12,11 @@ export interface ProviderConfig {
   apiKey: string;
   model: string;
   systemMessage: string;
+  jsonSystemMessage: string;
   suffix?: string;
   customVariables: CustomVariable[];
+  batchTranslation: boolean;
+  enableJsonSchema: boolean;
 }
 
 export interface PlatformSettings {
@@ -55,8 +60,7 @@ export const DEFAULT_PLATFORM_CONFIGS: PlatformConfigs = {
   },
 };
 
-export const DEFAULT_SYSTEM_MESSAGE =
-  "将提交的推特内容翻译为中文，不要修改原文，不要加入任何的注释和说明，不需要翻译hashtag，保留原文的emoji与特殊字符";
+export const DEFAULT_SYSTEM_MESSAGE = "将提供的推特内容翻译为中文，只翻译原文，不要加入任何的注释和说明，保留原文的emoji、hashtag与特殊字符";
 
 export const createDefaultProvider = (): ProviderConfig => ({
   id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
@@ -65,11 +69,11 @@ export const createDefaultProvider = (): ProviderConfig => ({
   apiKey: "",
   model: "deepseek-v4-flash",
   systemMessage: DEFAULT_SYSTEM_MESSAGE,
-  suffix: "",
-  customVariables: [
-    { name: "temperature", value: "1.3" },
-    { name: "stream", value: "false" },
-  ],
+  jsonSystemMessage: JSON_SYSTEM_MESSAGE,
+  suffix: "【由 deepseek-v4-flash 翻译，仅供参考】",
+  batchTranslation: true,
+  enableJsonSchema: true,
+  customVariables: [{ name: "stream", value: "false" }],
 });
 
 export function normalizeProviderConfig(provider: Partial<ProviderConfig>): ProviderConfig {
@@ -96,7 +100,12 @@ export function normalizeProviderConfig(provider: Partial<ProviderConfig>): Prov
     apiKey: typeof provider.apiKey === "string" ? provider.apiKey : defaults.apiKey,
     model: typeof provider.model === "string" ? provider.model : defaults.model,
     systemMessage: typeof provider.systemMessage === "string" ? provider.systemMessage : defaults.systemMessage,
+    jsonSystemMessage: typeof provider.jsonSystemMessage === "string" ? provider.jsonSystemMessage : defaults.jsonSystemMessage,
     suffix: typeof provider.suffix === "string" ? provider.suffix : defaults.suffix || "",
+    batchTranslation: typeof provider.batchTranslation === "boolean" ? provider.batchTranslation : defaults.batchTranslation,
+    enableJsonSchema:
+      (typeof provider.batchTranslation === "boolean" ? provider.batchTranslation : defaults.batchTranslation) &&
+      (typeof provider.enableJsonSchema === "boolean" ? provider.enableJsonSchema : defaults.enableJsonSchema),
     customVariables,
   };
 }

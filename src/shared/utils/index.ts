@@ -1,58 +1,133 @@
 ﻿import { appState } from "../store";
+import { BATCH_TRANSLATION_SYSTEM_MESSAGE } from "../constants";
 
 export interface TranslationTextItem {
   header: string;
   content: string;
 }
 
-export async function getOpenAITranslation(text: string): Promise<string> {
-  const fetchParam = {
+type ChatMessage = {
+  role: "system" | "user";
+  content: string;
+};
+
+function createChatCompletionRequest(messages: ChatMessage[], parameters: Record<string, unknown> = {}) {
+  return {
     headers: {
       "content-type": "application/json",
       Authorization: "Bearer " + appState.options.apiKey,
     },
     method: "POST",
     body: JSON.stringify({
-      model: appState.options.model,
-      messages: [
-        { role: "system", content: appState.options.systemMessage },
-        { role: "user", content: text },
-      ],
       ...appState.options.otherParam,
+      model: appState.options.model,
+      messages,
+      ...parameters,
+      stream: false,
     }),
   };
-  const data = await sendChromeMessage("GMFetch", {
+}
+
+async function requestChatCompletion(messages: ChatMessage[], parameters: Record<string, unknown> = {}) {
+  return sendChromeMessage("GMFetch", {
     url: appState.options.baseUrl + "/chat/completions",
-    option: fetchParam,
+    option: createChatCompletionRequest(messages, parameters),
     formatType: "json",
   });
-  return data.choices[0].message.content;
+}
+
+function cleanMarkdownJson(raw: unknown): string {
+  if (typeof raw !== "string" || !raw.trim()) {
+    throw new Error("模型未返回有效文本内容");
+  }
+  let cleaned = raw.trim();
+  if (cleaned.startsWith("```")) {
+    cleaned = cleaned
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```$/, "")
+      .trim();
+  }
+  return cleaned;
+}
+
+function getResponseContent(data: any): string {
+  const content = data?.choices?.[0]?.message?.content;
+  if (typeof content !== "string" || !content.trim()) {
+    throw new Error("模型未返回有效译文");
+  }
+  return content;
+}
+
+function parseTranslationList(raw: unknown, expectedLength: number): string[] {
+  const parsed: unknown = JSON.parse(cleanMarkdownJson(raw));
+  const list = Array.isArray(parsed) ? parsed : (parsed as { translations?: unknown })?.translations;
+  if (!Array.isArray(list) || list.length !== expectedLength || list.some((item) => typeof item !== "string")) {
+    throw new Error("返回格式或元素数量不匹配");
+  }
+  return list;
+}
+
+async function translateWithConcurrency(contents: string[], concurrency = 4): Promise<string[]> {
+  const translated = [...contents];
+  for (let index = 0; index < contents.length; index += concurrency) {
+    const chunk = contents.slice(index, index + concurrency);
+    const chunkResult = await Promise.all(chunk.map((text) => (text.trim() ? getOpenAITranslation(text) : Promise.resolve(text))));
+    translated.splice(index, chunkResult.length, ...chunkResult);
+  }
+  return translated;
+}
+
+export async function getOpenAITranslation(text: string): Promise<string> {
+  if (!text || !text.trim()) return text;
+  const data = await requestChatCompletion([
+    { role: "system", content: appState.options.systemMessage },
+    { role: "user", content: text },
+  ]);
+  return getResponseContent(data);
 }
 
 export async function translateTextItems(items: TranslationTextItem[], translate: boolean, separator: string): Promise<string> {
   if (items.length === 0) return "";
   let contents = items.map((item) => item.content);
+
   if (translate) {
-    const fetchParam = {
-      headers: { "content-type": "application/json", Authorization: "Bearer " + appState.options.apiKey },
-      method: "POST",
-      body: JSON.stringify({
-        model: appState.options.model,
-        messages: [
+    const isBatch = appState.options.batchTranslation && items.length > 1;
+
+    if (!isBatch) {
+      // 逐条纯文本翻译（单条直通或多条并发 Promise.all）
+      contents = await translateWithConcurrency(contents);
+    } else if (appState.options.enableJsonSchema) {
+      // 批量 + JSON Schema 结构化输出
+      const data = await requestChatCompletion(
+        [
           { role: "system", content: appState.options.systemMessage },
-          { role: "system", content: appState.options.jsonSystemMessage },
+          { role: "system", content: BATCH_TRANSLATION_SYSTEM_MESSAGE },
           { role: "user", content: JSON.stringify(contents) },
         ],
-        ...appState.options.otherParam,
-      }),
-    };
-    const data = await sendChromeMessage("GMFetch", { url: appState.options.baseUrl + "/chat/completions", option: fetchParam, formatType: "json" });
-    const translated: unknown = JSON.parse(data.choices[0].message.content);
-    if (!Array.isArray(translated) || translated.length !== items.length || translated.some((item) => typeof item !== "string")) {
-      throw new Error("LLM返回内容错误，请重试");
+        { response_format: { type: "json_object" } },
+      );
+
+      try {
+        contents = parseTranslationList(getResponseContent(data), items.length);
+      } catch (err) {
+        throw new Error(`LLM 结构化输出解析失败: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    } else {
+      // 批量 + System Message 约束输出
+      const data = await requestChatCompletion([
+        { role: "system", content: appState.options.systemMessage },
+        { role: "system", content: appState.options.jsonSystemMessage },
+        { role: "user", content: JSON.stringify(contents) },
+      ]);
+
+      try {
+        contents = parseTranslationList(getResponseContent(data), items.length);
+      } catch (err) {
+        throw new Error(`LLM 返回 JSON 格式错误: ${err instanceof Error ? err.message : String(err)}`);
+      }
     }
-    contents = translated;
   }
+
   const resultText = items.map((item, index) => `${item.header}${contents[index] ? "\n" : ""}${contents[index]}`).join(separator);
   if (translate && appState.options.suffix?.trim()) {
     return `${resultText}\n${appState.options.suffix.trim()}`;

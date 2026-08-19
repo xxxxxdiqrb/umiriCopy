@@ -37,6 +37,8 @@ export interface AppState {
     systemMessage: string;
     suffix: string;
     jsonSystemMessage: string;
+    batchTranslation: boolean;
+    enableJsonSchema: boolean;
     otherParam: Record<string, unknown>;
   };
   providers: ProviderConfig[];
@@ -69,6 +71,8 @@ export const appState = reactive<AppState>({
     systemMessage: "",
     suffix: "",
     jsonSystemMessage: JSON_SYSTEM_MESSAGE,
+    batchTranslation: true,
+    enableJsonSchema: true,
     otherParam: {},
   },
   providers: [],
@@ -77,7 +81,7 @@ export const appState = reactive<AppState>({
 });
 
 export function applyProvider(provider: ProviderConfig) {
-  const { apiKey, model, baseUrl, systemMessage, suffix, customVariables } = provider;
+  const { apiKey, model, baseUrl, systemMessage, jsonSystemMessage, suffix, customVariables, batchTranslation, enableJsonSchema } = provider;
   const customVars: Record<string, unknown> = {};
   if (customVariables && Array.isArray(customVariables)) {
     for (const v of customVariables) {
@@ -99,15 +103,14 @@ export function applyProvider(provider: ProviderConfig) {
     baseUrl,
     systemMessage,
     suffix: suffix ?? "",
-    jsonSystemMessage: JSON_SYSTEM_MESSAGE,
+    jsonSystemMessage,
+    batchTranslation: batchTranslation ?? false,
+    enableJsonSchema: batchTranslation && enableJsonSchema,
     otherParam: { ...customVars },
   });
 }
 
-export function showToast(
-  message: string,
-  type: "success" | "error" = "success",
-) {
+export function showToast(message: string, type: "success" | "error" = "success") {
   appState.toast.message = message;
   appState.toast.type = type;
   appState.toast.visible = true;
@@ -158,8 +161,7 @@ export async function refreshProvidersFromStorage() {
       const defaultId = stored.defaultProviderId;
       appState.defaultProviderId = defaultId;
 
-      const provider =
-        providers.find((p) => p.id === defaultId) || providers[0];
+      const provider = providers.find((p) => p.id === defaultId) || providers[0];
       if (provider) {
         applyProvider(provider);
       }

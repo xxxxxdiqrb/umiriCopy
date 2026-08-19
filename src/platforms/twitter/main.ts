@@ -2,7 +2,7 @@ import { createApp } from "vue";
 import App from "./App.vue";
 import { appState, applyProvider } from "../../shared/store";
 import { createElement } from "../../shared/utils";
-import type { ProviderConfig } from "../../options/types";
+import { normalizeProviderConfig, type ProviderConfig } from "../../options/types";
 import { platformState } from "./platform";
 
 async function init() {
@@ -10,9 +10,9 @@ async function init() {
     if (stored?.providers) {
         let providers: ProviderConfig[] = [];
         if (Array.isArray(stored.providers)) {
-            providers = stored.providers;
+            providers = stored.providers.map((provider: Partial<ProviderConfig>) => normalizeProviderConfig(provider));
         } else if (typeof stored.providers === "object") {
-            providers = Object.values(stored.providers);
+            providers = Object.values(stored.providers).map((provider) => normalizeProviderConfig(provider as Partial<ProviderConfig>));
         }
         
         if (providers.length > 0) {
