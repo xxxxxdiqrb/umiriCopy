@@ -48,13 +48,12 @@ export async function translateTextItems(items: TranslationTextItem[], translate
     };
     const data = await sendChromeMessage("GMFetch", { url: appState.options.baseUrl + "/chat/completions", option: fetchParam, formatType: "json" });
     const translated: unknown = JSON.parse(data.choices[0].message.content);
-    console.log(translated);
     if (!Array.isArray(translated) || translated.length !== items.length || translated.some((item) => typeof item !== "string")) {
       throw new Error("LLM返回内容错误，请重试");
     }
     contents = translated;
   }
-  const resultText = items.map((item, index) => `${item.header}${contents[index]}`).join(separator);
+  const resultText = items.map((item, index) => `${item.header}${contents[index] ? "\n" : ""}${contents[index]}`).join(separator);
   if (translate && appState.options.suffix?.trim()) {
     return `${resultText}\n${appState.options.suffix.trim()}`;
   }

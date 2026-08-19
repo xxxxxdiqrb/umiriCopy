@@ -7,7 +7,7 @@ export function extractTweetTextContent(tweetTextElement: HTMLElement): string {
     if (children.nodeName === "IMG") {
       textContent += (children as HTMLImageElement).alt;
     } else {
-      textContent += (children as HTMLElement).innerText;
+      textContent += (children as HTMLElement).textContent;
     }
   }
   return textContent;

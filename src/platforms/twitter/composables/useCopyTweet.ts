@@ -11,10 +11,13 @@ async function extractTweetTexts(articleList: HTMLElement[]): Promise<string> {
   const textContents: TranslationTextItem[] = [];
   for (const article of articleList) {
     const textDiv = article.querySelector('div[data-testid="tweetText"]') as HTMLElement | null;
-    if (!textDiv || article.querySelector("div[aria-labelledby")?.contains(textDiv)) continue;
+    let content = "";
+    if (textDiv && !article.querySelector("div[aria-labelledby")?.contains(textDiv)) {
+      content = extractTweetTextContent(textDiv);
+    }
     const userName = getTweetUserName(article);
     const time = getTweetTime(article);
-    textContents.push({ header: `${userName} · ${time.toLocaleString()}\n`, content: extractTweetTextContent(textDiv) });
+    textContents.push({ header: `${userName} · ${time.toLocaleString()}`, content: content });
   }
   if (platformState.configBar.translate) appState.loading.text = "正在翻译文本";
   return translateTextItems(textContents, platformState.configBar.translate, TEXT_SEPARATOR);
