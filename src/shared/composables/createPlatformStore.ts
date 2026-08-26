@@ -10,6 +10,7 @@ export interface PlatformState {
     captureScreenshot: boolean;
     copyImages: boolean;
     download: boolean;
+    getAlt: boolean;
     selectedProviderId: string | null;
   };
 }
@@ -20,10 +21,11 @@ export async function getPlatformSettingsFromStorage(platform: "twitter" | "inst
     const stored = (await chrome.storage.local.get("options"))?.options;
     const platformConfig = stored?.platformConfigs?.[platform];
     if (platformConfig && typeof platformConfig === "object") {
-      return {
+        return {
         translate: typeof platformConfig.translate === "boolean" ? platformConfig.translate : fallbackDefaults.translate,
         copyImages: typeof platformConfig.copyImages === "boolean" ? platformConfig.copyImages : fallbackDefaults.copyImages,
         download: typeof platformConfig.download === "boolean" ? platformConfig.download : fallbackDefaults.download,
+        getAlt: typeof platformConfig.getAlt === "boolean" ? platformConfig.getAlt : fallbackDefaults.getAlt,
         captureScreenshot:
           platform === "twitter"
             ? typeof platformConfig.captureScreenshot === "boolean"
@@ -48,6 +50,7 @@ export function createPlatformStore(platform: "twitter" | "instagram") {
             captureScreenshot: fallback.captureScreenshot ?? true,
             copyImages: fallback.copyImages,
             download: fallback.download,
+            getAlt: fallback.getAlt ?? false,
             selectedProviderId: fallback.providerId ?? null,
         },
     });
@@ -57,6 +60,11 @@ export function createPlatformStore(platform: "twitter" | "instagram") {
         platformState.configBar.translate = settings.translate;
         platformState.configBar.copyImages = settings.copyImages;
         platformState.configBar.download = settings.download;
+        platformState.configBar.getAlt = settings.getAlt ?? false;
+        if (!platformState.configBar.copyImages) {
+            platformState.configBar.download = false;
+            platformState.configBar.getAlt = false;
+        }
         if (platform === "twitter" && settings.captureScreenshot !== undefined) {
             platformState.configBar.captureScreenshot = settings.captureScreenshot;
         }
@@ -108,6 +116,17 @@ export function createPlatformStore(platform: "twitter" | "instagram") {
             type: "toggle",
             value: platformState.configBar.copyImages,
         },
+        ...(platform === "twitter"
+            ? [
+                  {
+                      key: "getAlt",
+                      label: "获取ALT",
+                      type: "toggle" as const,
+                      value: platformState.configBar.getAlt,
+                      dependsOn: "copyImages",
+                  },
+              ]
+            : []),
         {
             key: "download",
             label: "图片下载到本地",
@@ -133,10 +152,14 @@ export function createPlatformStore(platform: "twitter" | "instagram") {
                 configBar.copyImages = value as boolean;
                 if (!value) {
                     configBar.download = false;
+                    configBar.getAlt = false;
                 }
                 break;
             case "download":
                 configBar.download = value as boolean;
+                break;
+            case "getAlt":
+                configBar.getAlt = value as boolean;
                 break;
             case "selectedProviderId":
                 configBar.selectedProviderId = value as string;

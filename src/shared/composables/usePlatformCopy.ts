@@ -1,5 +1,6 @@
 ﻿import { appState, showToast, showActionBar, closeActionBar } from "../store";
 import type { PlatformState } from "./createPlatformStore";
+import { CopyStageError } from "../utils";
 
 export interface UsePlatformCopyOptions {
     platformState: PlatformState;
@@ -71,14 +72,9 @@ export function usePlatformCopy(options: UsePlatformCopyOptions) {
             closeActionBar();
         } catch (e) {
             console.error(e);
-            const stage = appState.loading.text;
-            const stageName = stage.includes("翻译")
-                ? "翻译"
-                : stage.includes("截图")
-                    ? "截图"
-                    : stage.includes("图片")
-                        ? "图片下载"
-                        : "资源获取";
+            const stageName = e instanceof CopyStageError
+                ? ({ alt: "ALT文本获取", translation: "翻译", screenshot: "截图", image: "图片下载", text: "文本获取", resource: "资源获取" }[e.stage])
+                : "资源获取";
             retryArticles = articles;
             showActionBar({
                 message: `${stageName}失败：${getErrorMessage(e)}`,

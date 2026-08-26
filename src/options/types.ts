@@ -24,6 +24,7 @@ export interface PlatformSettings {
   copyImages: boolean;
   download: boolean;
   captureScreenshot?: boolean;
+  getAlt?: boolean;
   providerId?: string | null;
 }
 
@@ -50,6 +51,7 @@ export const DEFAULT_PLATFORM_CONFIGS: PlatformConfigs = {
     captureScreenshot: true,
     copyImages: true,
     download: false,
+    getAlt: false,
     providerId: null,
   },
   instagram: {
@@ -115,6 +117,7 @@ export function normalizePlatformSettings(settings: Partial<PlatformSettings> | 
     translate: typeof settings?.translate === "boolean" ? settings.translate : fallback.translate,
     copyImages: typeof settings?.copyImages === "boolean" ? settings.copyImages : fallback.copyImages,
     download: typeof settings?.download === "boolean" ? settings.download : fallback.download,
+    getAlt: typeof settings?.getAlt === "boolean" ? settings.getAlt : fallback.getAlt,
     captureScreenshot:
       fallback.captureScreenshot !== undefined
         ? typeof settings?.captureScreenshot === "boolean"

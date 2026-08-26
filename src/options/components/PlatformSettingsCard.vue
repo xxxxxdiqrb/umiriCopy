@@ -7,6 +7,7 @@ const props = defineProps<{
   modelValue: PlatformSettings;
   providers: ProviderConfig[];
   hasScreenshot?: boolean;
+  hasAlt?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -23,6 +24,9 @@ const updateSetting = <K extends keyof PlatformSettings>(key: K, value: Platform
   // 联动逻辑：如果关闭复制图片，自动将下载到本地也关闭
   if (key === "copyImages" && !value) {
     updated.download = false;
+    if (props.hasAlt) {
+      updated.getAlt = false;
+    }
   }
 
   emit("update:modelValue", updated);
@@ -117,6 +121,24 @@ const updateSetting = <K extends keyof PlatformSettings>(key: K, value: Platform
           <span class="toggle-indicator"></span>
         </button>
       </div>
+
+      <template v-if="hasAlt">
+        <div v-if="modelValue.copyImages" class="setting-row">
+          <div class="setting-info">
+            <span class="setting-label">默认获取 ALT</span>
+            <span class="setting-desc">复制图片时同时获取图片说明文字</span>
+          </div>
+          <button
+            type="button"
+            class="toggle-btn"
+            :class="{ active: modelValue.getAlt }"
+            @click="updateSetting('getAlt', !modelValue.getAlt)"
+          >
+            <span class="toggle-indicator"></span>
+          </button>
+        </div>
+
+      </template>
     </div>
   </div>
 </template>

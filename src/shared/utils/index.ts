@@ -1,6 +1,22 @@
 ﻿import { appState } from "../store";
 import { BATCH_TRANSLATION_SYSTEM_MESSAGE } from "../constants";
 
+export type CopyStage = "text" | "alt" | "translation" | "screenshot" | "image" | "resource";
+
+export class CopyStageError extends Error {
+  public readonly cause?: unknown;
+
+  constructor(public readonly stage: CopyStage, message: string, cause?: unknown) {
+    super(message);
+    if (cause !== undefined) this.cause = cause;
+    this.name = "CopyStageError";
+  }
+}
+
+export function toCopyStageError(stage: CopyStage, message: string, error: unknown): CopyStageError {
+  return error instanceof CopyStageError ? error : new CopyStageError(stage, message, error);
+}
+
 export interface TranslationTextItem {
   header: string;
   content: string;
@@ -77,6 +93,41 @@ async function translateWithConcurrency(contents: string[], concurrency = 4): Pr
   return translated;
 }
 
+/** Translate a list while preserving its order and empty entries. */
+export async function translateTextContents(contents: string[], translate: boolean): Promise<string[]> {
+  if (!translate || contents.length === 0) return [...contents];
+
+  const isBatch = appState.options.batchTranslation && contents.length > 1;
+  if (!isBatch) return translateWithConcurrency(contents);
+
+  if (appState.options.enableJsonSchema) {
+    const data = await requestChatCompletion(
+      [
+        { role: "system", content: appState.options.systemMessage },
+        { role: "system", content: BATCH_TRANSLATION_SYSTEM_MESSAGE },
+        { role: "user", content: JSON.stringify(contents) },
+      ],
+      { response_format: { type: "json_object" } },
+    );
+    try {
+      return parseTranslationList(getResponseContent(data), contents.length);
+    } catch (err) {
+      throw new Error(`LLM 结构化输出解析失败: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  const data = await requestChatCompletion([
+    { role: "system", content: appState.options.systemMessage },
+    { role: "system", content: appState.options.jsonSystemMessage },
+    { role: "user", content: JSON.stringify(contents) },
+  ]);
+  try {
+    return parseTranslationList(getResponseContent(data), contents.length);
+  } catch (err) {
+    throw new Error(`LLM 返回 JSON 格式错误: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
 export async function getOpenAITranslation(text: string): Promise<string> {
   if (!text || !text.trim()) return text;
   const data = await requestChatCompletion([
@@ -88,45 +139,7 @@ export async function getOpenAITranslation(text: string): Promise<string> {
 
 export async function translateTextItems(items: TranslationTextItem[], translate: boolean, separator: string): Promise<string> {
   if (items.length === 0) return "";
-  let contents = items.map((item) => item.content);
-
-  if (translate) {
-    const isBatch = appState.options.batchTranslation && items.length > 1;
-
-    if (!isBatch) {
-      // 逐条纯文本翻译（单条直通或多条并发 Promise.all）
-      contents = await translateWithConcurrency(contents);
-    } else if (appState.options.enableJsonSchema) {
-      // 批量 + JSON Schema 结构化输出
-      const data = await requestChatCompletion(
-        [
-          { role: "system", content: appState.options.systemMessage },
-          { role: "system", content: BATCH_TRANSLATION_SYSTEM_MESSAGE },
-          { role: "user", content: JSON.stringify(contents) },
-        ],
-        { response_format: { type: "json_object" } },
-      );
-
-      try {
-        contents = parseTranslationList(getResponseContent(data), items.length);
-      } catch (err) {
-        throw new Error(`LLM 结构化输出解析失败: ${err instanceof Error ? err.message : String(err)}`);
-      }
-    } else {
-      // 批量 + System Message 约束输出
-      const data = await requestChatCompletion([
-        { role: "system", content: appState.options.systemMessage },
-        { role: "system", content: appState.options.jsonSystemMessage },
-        { role: "user", content: JSON.stringify(contents) },
-      ]);
-
-      try {
-        contents = parseTranslationList(getResponseContent(data), items.length);
-      } catch (err) {
-        throw new Error(`LLM 返回 JSON 格式错误: ${err instanceof Error ? err.message : String(err)}`);
-      }
-    }
-  }
+  const contents = await translateTextContents(items.map((item) => item.content), translate);
 
   const resultText = items.map((item, index) => `${item.header}${contents[index] ? "\n" : ""}${contents[index]}`).join(separator);
   if (translate && appState.options.suffix?.trim()) {

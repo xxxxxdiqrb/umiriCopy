@@ -236,6 +236,7 @@ const handleImportFile = async (event: Event) => {
           platform-key="twitter"
           :providers="options.providers"
           has-screenshot
+          has-alt
           @change="saveOptions"
         />
 

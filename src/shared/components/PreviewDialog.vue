@@ -5,13 +5,23 @@ import twemoji from "twemoji";
 
 const editorRef = ref<HTMLDivElement | null>(null);
 
+function renderEditorContent(content: string): string {
+  // Keep each source line in its own block. A <br> immediately after a
+  // block-level image creates an anonymous empty line box in contenteditable.
+  if (!content) return "";
+  return content
+    .split(/\r?\n/)
+    .map((line) => `<div class="preview-line">${line || "<br>"}</div>`)
+    .join("");
+}
+
 watch(
   () => appState.previewDialog.visible,
   async (visible) => {
     if (visible) {
       await nextTick();
       if (editorRef.value) {
-        const content = appState.previewDialog.content.replace(/\n/g, "<br>");
+        const content = renderEditorContent(appState.previewDialog.content);
         editorRef.value.innerHTML = twemoji.parse(content);
       }
     }
@@ -29,9 +39,7 @@ const handleCopy = async () => {
     clone.querySelectorAll("img[data-original-src]").forEach((img) => {
       const originalSrc = img.getAttribute("data-original-src");
       if (originalSrc) {
-        const src = originalSrc.startsWith("file://")
-          ? originalSrc
-          : `file://${originalSrc}`;
+        const src = originalSrc.startsWith("file://") ? originalSrc : `file://${originalSrc}`;
         img.setAttribute("src", src);
         img.removeAttribute("data-original-src");
       }
@@ -107,9 +115,7 @@ const handleCopy = async () => {
   color: rgb(239, 243, 244);
   font-size: 18px;
   font-weight: bold;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
-    sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   margin-bottom: 16px;
   text-align: center;
 }
@@ -125,13 +131,16 @@ const handleCopy = async () => {
   font-size: 16px;
   color: rgb(239, 243, 244);
   font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
-    "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
   line-height: 1.5;
   outline: none;
   box-sizing: border-box;
   overflow-y: auto;
   word-wrap: break-word;
+
+  :deep(.preview-line) {
+    min-height: 1.5em;
+  }
 
   &:empty::before {
     content: "无内容";
@@ -185,9 +194,7 @@ const handleCopy = async () => {
   font-weight: bold;
   font-size: 15px;
   cursor: pointer;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
-    sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   transition: opacity 0.2s;
 
   &:active {
