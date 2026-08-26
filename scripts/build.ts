@@ -29,28 +29,37 @@ const copyFile = (src: string, dest: string) => {
 }
 
 async function buildAll() {
+  const watch = process.argv.includes('--watch')
+  const buildOptions = watch
+    ? { mode: 'development' as const, build: { watch: {}, emptyOutDir: false } }
+    : {}
+
   console.log('Building popup and options...')
   
   await build({
-    configFile: r('vite.config.ts')
+    configFile: r('vite.config.ts'),
+    ...buildOptions
   })
 
   console.log('Building Twitter content script...')
   
   await build({
-    configFile: r('vite.twitter.config.ts')
+    configFile: r('vite.twitter.config.ts'),
+    ...buildOptions
   })
 
   console.log('Building Instagram content script...')
   
   await build({
-    configFile: r('vite.instagram.config.ts')
+    configFile: r('vite.instagram.config.ts'),
+    ...buildOptions
   })
 
   console.log('Building TikTok content script...')
   
   await build({
-    configFile: r('vite.tiktok.config.ts')
+    configFile: r('vite.tiktok.config.ts'),
+    ...buildOptions
   })
 
   console.log('Copying extension files...')

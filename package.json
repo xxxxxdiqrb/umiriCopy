@@ -3,7 +3,7 @@
   "version": "0.1.6",
   "type": "module",
   "scripts": {
-    "dev": "vite build --watch --mode development",
+    "dev": "node scripts/build.ts --watch",
     "build": "node scripts/build.ts",
     "preview": "vite preview"
   },
