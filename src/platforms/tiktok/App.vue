@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
-import LoadingPanel from "../../shared/components/LoadingPanel.vue";
-import ActionBar from "../../shared/components/ActionBar.vue";
-import PreviewDialog from "../../shared/components/PreviewDialog.vue";
-import Toast from "../../shared/components/Toast.vue";
-import FloatingCopyButton from "../../shared/components/FloatingCopyButton.vue";
-import SimpleConfigBar from "./components/SimpleConfigBar.vue";
-import { handleDownloadVideo } from "./composables/videoHandler";
+import { ref, onMounted, onUnmounted } from 'vue';
+import LoadingPanel from '../../shared/components/LoadingPanel.vue';
+import ActionBar from '../../shared/components/ActionBar.vue';
+import PreviewDialog from '../../shared/components/PreviewDialog.vue';
+import Toast from '../../shared/components/Toast.vue';
+import FloatingCopyButton from '../../shared/components/FloatingCopyButton.vue';
+import SimpleConfigBar from './components/SimpleConfigBar.vue';
+import { handleDownloadVideo } from './composables/videoHandler';
 
 const isVideoPage = ref(false);
 const showConfigBar = ref(false);

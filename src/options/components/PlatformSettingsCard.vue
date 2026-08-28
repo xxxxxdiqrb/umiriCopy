@@ -1,9 +1,9 @@
 ﻿<script setup lang="ts">
-import type { PlatformSettings, ProviderConfig } from "../types";
+import type { PlatformSettings, ProviderConfig } from '../types';
 
 const props = defineProps<{
   title: string;
-  platformKey: "twitter" | "instagram";
+  platformKey: 'twitter' | 'instagram';
   modelValue: PlatformSettings;
   providers: ProviderConfig[];
   hasScreenshot?: boolean;
@@ -11,7 +11,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  "update:modelValue": [value: PlatformSettings];
+  'update:modelValue': [value: PlatformSettings];
   change: [];
 }>();
 
@@ -22,15 +22,15 @@ const updateSetting = <K extends keyof PlatformSettings>(key: K, value: Platform
   };
 
   // 联动逻辑：如果关闭复制图片，自动将下载到本地也关闭
-  if (key === "copyImages" && !value) {
+  if (key === 'copyImages' && !value) {
     updated.download = false;
     if (props.hasAlt) {
       updated.getAlt = false;
     }
   }
 
-  emit("update:modelValue", updated);
-  emit("change");
+  emit('update:modelValue', updated);
+  emit('change');
 };
 </script>
 
@@ -137,7 +137,6 @@ const updateSetting = <K extends keyof PlatformSettings>(key: K, value: Platform
             <span class="toggle-indicator"></span>
           </button>
         </div>
-
       </template>
     </div>
   </div>

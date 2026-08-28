@@ -20,7 +20,7 @@ const emit = defineEmits<{
           />
         </svg>
       </slot>
-      <span class="copy-text">{{ label || "复制" }}</span>
+      <span class="copy-text">{{ label || '复制' }}</span>
     </button>
   </div>
 </template>
@@ -66,9 +66,7 @@ const emit = defineEmits<{
   color: rgb(255, 255, 255);
   font-size: 14px;
   font-weight: 700;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
-    sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   white-space: nowrap;
 }
 </style>

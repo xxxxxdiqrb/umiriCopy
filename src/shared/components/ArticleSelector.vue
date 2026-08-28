@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { appState } from "../store";
+import { computed } from 'vue';
+import { appState } from '../store';
 
 const props = defineProps<{
   article: HTMLElement;
@@ -85,8 +85,7 @@ const handleClick = (e: MouseEvent) => {
     font-size: 12px;
     font-weight: 700;
     font-family:
-      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
-      sans-serif;
+      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     white-space: nowrap;
     line-height: 20px;
   }

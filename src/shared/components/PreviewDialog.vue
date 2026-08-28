@@ -1,18 +1,18 @@
 ﻿<script setup lang="ts">
-import { ref, watch, nextTick } from "vue";
-import { appState, showToast, showActionBar } from "../store";
-import twemoji from "twemoji";
+import { ref, watch, nextTick } from 'vue';
+import { appState, showToast, showActionBar } from '../store';
+import twemoji from 'twemoji';
 
 const editorRef = ref<HTMLDivElement | null>(null);
 
 function renderEditorContent(content: string): string {
   // Keep each source line in its own block. A <br> immediately after a
   // block-level image creates an anonymous empty line box in contenteditable.
-  if (!content) return "";
+  if (!content) return '';
   return content
     .split(/\r?\n/)
-    .map((line) => `<div class="preview-line">${line || "<br>"}</div>`)
-    .join("");
+    .map((line) => `<div class="preview-line">${line || '<br>'}</div>`)
+    .join('');
 }
 
 watch(
@@ -36,31 +36,31 @@ const handleCopy = async () => {
   if (!editorRef.value) return;
   try {
     const clone = editorRef.value.cloneNode(true) as HTMLDivElement;
-    clone.querySelectorAll("img[data-original-src]").forEach((img) => {
-      const originalSrc = img.getAttribute("data-original-src");
+    clone.querySelectorAll('img[data-original-src]').forEach((img) => {
+      const originalSrc = img.getAttribute('data-original-src');
       if (originalSrc) {
-        const src = originalSrc.startsWith("file://") ? originalSrc : `file://${originalSrc}`;
-        img.setAttribute("src", src);
-        img.removeAttribute("data-original-src");
+        const src = originalSrc.startsWith('file://') ? originalSrc : `file://${originalSrc}`;
+        img.setAttribute('src', src);
+        img.removeAttribute('data-original-src');
       }
     });
-    clone.querySelectorAll("img.emoji").forEach((img) => {
-      const alt = img.getAttribute("alt");
+    clone.querySelectorAll('img.emoji').forEach((img) => {
+      const alt = img.getAttribute('alt');
       if (alt) {
         img.replaceWith(alt);
       }
     });
     const html = clone.innerHTML;
-    const type = "text/html";
+    const type = 'text/html';
     const blob = new Blob([html], { type });
     const data = [new ClipboardItem({ [type]: blob })];
     await navigator.clipboard.write(data);
-    showToast("复制成功");
+    showToast('复制成功');
     appState.previewDialog.visible = false;
   } catch (error) {
     showActionBar({
-      message: `复制失败: ${error instanceof Error ? error.message : "未知错误"}`,
-      buttonText: "确定",
+      message: `复制失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      buttonText: '确定',
     });
   }
 };
@@ -115,7 +115,7 @@ const handleCopy = async () => {
   color: rgb(239, 243, 244);
   font-size: 18px;
   font-weight: bold;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   margin-bottom: 16px;
   text-align: center;
 }
@@ -131,7 +131,8 @@ const handleCopy = async () => {
   font-size: 16px;
   color: rgb(239, 243, 244);
   font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
   line-height: 1.5;
   outline: none;
   box-sizing: border-box;
@@ -143,7 +144,7 @@ const handleCopy = async () => {
   }
 
   &:empty::before {
-    content: "无内容";
+    content: '无内容';
     color: rgb(113, 118, 123);
   }
 
@@ -194,7 +195,7 @@ const handleCopy = async () => {
   font-weight: bold;
   font-size: 15px;
   cursor: pointer;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   transition: opacity 0.2s;
 
   &:active {

@@ -1,21 +1,29 @@
-﻿import { appState } from "../store";
-import { BATCH_TRANSLATION_SYSTEM_MESSAGE } from "../constants";
-import { requestLLM } from "../llm";
-import { TRANSLATION_JSON_SCHEMA } from "../llm/schemas";
+﻿import { appState } from '../store';
+import { BATCH_TRANSLATION_SYSTEM_MESSAGE } from '../constants';
+import { requestLLM } from '../llm';
+import { TRANSLATION_JSON_SCHEMA } from '../llm/schemas';
 
-export type CopyStage = "text" | "alt" | "translation" | "screenshot" | "image" | "resource";
+export type CopyStage = 'text' | 'alt' | 'translation' | 'screenshot' | 'image' | 'resource';
 
 export class CopyStageError extends Error {
   public readonly cause?: unknown;
 
-  constructor(public readonly stage: CopyStage, message: string, cause?: unknown) {
+  constructor(
+    public readonly stage: CopyStage,
+    message: string,
+    cause?: unknown,
+  ) {
     super(message);
     if (cause !== undefined) this.cause = cause;
-    this.name = "CopyStageError";
+    this.name = 'CopyStageError';
   }
 }
 
-export function toCopyStageError(stage: CopyStage, message: string, error: unknown): CopyStageError {
+export function toCopyStageError(
+  stage: CopyStage,
+  message: string,
+  error: unknown,
+): CopyStageError {
   return error instanceof CopyStageError ? error : new CopyStageError(stage, message, error);
 }
 
@@ -24,12 +32,15 @@ export interface TranslationTextItem {
   content: string;
 }
 
-async function requestChatCompletion(messages: { role: "system" | "user" | "assistant"; content: string }[], parameters: Record<string, unknown> = {}) {
+async function requestChatCompletion(
+  messages: { role: 'system' | 'user' | 'assistant'; content: string }[],
+  parameters: Record<string, unknown> = {},
+) {
   const { response_format, jsonSchema, ...providerParameters } = parameters;
   const response = await requestLLM(
     {
-      id: "active",
-      name: "active",
+      id: 'active',
+      name: 'active',
       provider: appState.options.provider,
       protocol: appState.options.protocol,
       baseUrl: appState.options.baseUrl,
@@ -37,24 +48,33 @@ async function requestChatCompletion(messages: { role: "system" | "user" | "assi
       model: appState.options.model,
       systemMessage: appState.options.systemMessage,
       jsonSystemMessage: appState.options.jsonSystemMessage,
-      customVariables: Object.entries(appState.options.otherParam).map(([name, value]) => ({ name, value: String(value) })),
+      customVariables: Object.entries(appState.options.otherParam).map(([name, value]) => ({
+        name,
+        value: String(value),
+      })),
       batchTranslation: appState.options.batchTranslation,
       enableJsonSchema: appState.options.enableJsonSchema,
     },
-    { model: appState.options.model, messages, jsonMode: response_format !== undefined, jsonSchema: jsonSchema as Record<string, unknown> | undefined, parameters: providerParameters },
+    {
+      model: appState.options.model,
+      messages,
+      jsonMode: response_format !== undefined,
+      jsonSchema: jsonSchema as Record<string, unknown> | undefined,
+      parameters: providerParameters,
+    },
   );
   return { choices: [{ message: { content: response.text } }] };
 }
 
 function cleanMarkdownJson(raw: unknown): string {
-  if (typeof raw !== "string" || !raw.trim()) {
-    throw new Error("模型未返回有效文本内容");
+  if (typeof raw !== 'string' || !raw.trim()) {
+    throw new Error('模型未返回有效文本内容');
   }
   let cleaned = raw.trim();
-  if (cleaned.startsWith("```")) {
+  if (cleaned.startsWith('```')) {
     cleaned = cleaned
-      .replace(/^```(?:json)?\s*/i, "")
-      .replace(/\s*```$/, "")
+      .replace(/^```(?:json)?\s*/i, '')
+      .replace(/\s*```$/, '')
       .trim();
   }
   return cleaned;
@@ -62,17 +82,23 @@ function cleanMarkdownJson(raw: unknown): string {
 
 function getResponseContent(data: any): string {
   const content = data?.choices?.[0]?.message?.content;
-  if (typeof content !== "string" || !content.trim()) {
-    throw new Error("模型未返回有效译文");
+  if (typeof content !== 'string' || !content.trim()) {
+    throw new Error('模型未返回有效译文');
   }
   return content;
 }
 
 function parseTranslationList(raw: unknown, expectedLength: number): string[] {
   const parsed: unknown = JSON.parse(cleanMarkdownJson(raw));
-  const list = Array.isArray(parsed) ? parsed : (parsed as { translations?: unknown })?.translations;
-  if (!Array.isArray(list) || list.length !== expectedLength || list.some((item) => typeof item !== "string")) {
-    throw new Error("返回格式或元素数量不匹配");
+  const list = Array.isArray(parsed)
+    ? parsed
+    : (parsed as { translations?: unknown })?.translations;
+  if (
+    !Array.isArray(list) ||
+    list.length !== expectedLength ||
+    list.some((item) => typeof item !== 'string')
+  ) {
+    throw new Error('返回格式或元素数量不匹配');
   }
   return list;
 }
@@ -81,14 +107,19 @@ async function translateWithConcurrency(contents: string[], concurrency = 4): Pr
   const translated = [...contents];
   for (let index = 0; index < contents.length; index += concurrency) {
     const chunk = contents.slice(index, index + concurrency);
-    const chunkResult = await Promise.all(chunk.map((text) => (text.trim() ? getOpenAITranslation(text) : Promise.resolve(text))));
+    const chunkResult = await Promise.all(
+      chunk.map((text) => (text.trim() ? getOpenAITranslation(text) : Promise.resolve(text))),
+    );
     translated.splice(index, chunkResult.length, ...chunkResult);
   }
   return translated;
 }
 
 /** Translate a list while preserving its order and empty entries. */
-export async function translateTextContents(contents: string[], translate: boolean): Promise<string[]> {
+export async function translateTextContents(
+  contents: string[],
+  translate: boolean,
+): Promise<string[]> {
   if (!translate || contents.length === 0) return [...contents];
 
   const isBatch = appState.options.batchTranslation && contents.length > 1;
@@ -97,23 +128,25 @@ export async function translateTextContents(contents: string[], translate: boole
   if (appState.options.enableJsonSchema) {
     const data = await requestChatCompletion(
       [
-        { role: "system", content: appState.options.systemMessage },
-        { role: "system", content: BATCH_TRANSLATION_SYSTEM_MESSAGE },
-        { role: "user", content: JSON.stringify(contents) },
+        { role: 'system', content: appState.options.systemMessage },
+        { role: 'system', content: BATCH_TRANSLATION_SYSTEM_MESSAGE },
+        { role: 'user', content: JSON.stringify(contents) },
       ],
-      { response_format: { type: "json_object" }, jsonSchema: TRANSLATION_JSON_SCHEMA },
+      { response_format: { type: 'json_object' }, jsonSchema: TRANSLATION_JSON_SCHEMA },
     );
     try {
       return parseTranslationList(getResponseContent(data), contents.length);
     } catch (err) {
-      throw new Error(`LLM 结构化输出解析失败: ${err instanceof Error ? err.message : String(err)}`);
+      throw new Error(
+        `LLM 结构化输出解析失败: ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
   }
 
   const data = await requestChatCompletion([
-    { role: "system", content: appState.options.systemMessage },
-    { role: "system", content: appState.options.jsonSystemMessage },
-    { role: "user", content: JSON.stringify(contents) },
+    { role: 'system', content: appState.options.systemMessage },
+    { role: 'system', content: appState.options.jsonSystemMessage },
+    { role: 'user', content: JSON.stringify(contents) },
   ]);
   try {
     return parseTranslationList(getResponseContent(data), contents.length);
@@ -125,17 +158,26 @@ export async function translateTextContents(contents: string[], translate: boole
 export async function getOpenAITranslation(text: string): Promise<string> {
   if (!text || !text.trim()) return text;
   const data = await requestChatCompletion([
-    { role: "system", content: appState.options.systemMessage },
-    { role: "user", content: text },
+    { role: 'system', content: appState.options.systemMessage },
+    { role: 'user', content: text },
   ]);
   return getResponseContent(data);
 }
 
-export async function translateTextItems(items: TranslationTextItem[], translate: boolean, separator: string): Promise<string> {
-  if (items.length === 0) return "";
-  const contents = await translateTextContents(items.map((item) => item.content), translate);
+export async function translateTextItems(
+  items: TranslationTextItem[],
+  translate: boolean,
+  separator: string,
+): Promise<string> {
+  if (items.length === 0) return '';
+  const contents = await translateTextContents(
+    items.map((item) => item.content),
+    translate,
+  );
 
-  const resultText = items.map((item, index) => `${item.header}${contents[index] ? "\n" : ""}${contents[index]}`).join(separator);
+  const resultText = items
+    .map((item, index) => `${item.header}${contents[index] ? '\n' : ''}${contents[index]}`)
+    .join(separator);
   if (translate && appState.options.suffix?.trim()) {
     return `${resultText}\n${appState.options.suffix.trim()}`;
   }
@@ -170,7 +212,10 @@ export function setElementStyle(element: HTMLElement, option: Record<string, str
   }
 }
 
-export function sendChromeMessage<T = any>(type: string, data: Record<string, unknown>): Promise<T> {
+export function sendChromeMessage<T = any>(
+  type: string,
+  data: Record<string, unknown>,
+): Promise<T> {
   return new Promise((resolve, reject) => {
     chrome.runtime.sendMessage({ type, ...data }, (response) => {
       if (response.isSuccess) {
@@ -183,12 +228,12 @@ export function sendChromeMessage<T = any>(type: string, data: Record<string, un
 }
 
 export function formatDateForFilename(date: Date): string {
-  return date.toLocaleString().split("/").join("-").split(":").join("");
+  return date.toLocaleString().split('/').join('-').split(':').join('');
 }
 
 export async function getBase64Image(url: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage({ type: "fetchImageAsBase64", url }, (response) => {
+    chrome.runtime.sendMessage({ type: 'fetchImageAsBase64', url }, (response) => {
       if (response.isSuccess) {
         resolve(response.data);
       } else {
@@ -200,7 +245,7 @@ export async function getBase64Image(url: string): Promise<string> {
 
 export async function getLocalImage(data: { name: string; url: string }[]): Promise<string> {
   return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage({ type: "downloadImageList", data }, (response) => {
+    chrome.runtime.sendMessage({ type: 'downloadImageList', data }, (response) => {
       if (response.isSuccess) {
         resolve(response.pathList[0]);
       } else {
@@ -215,10 +260,13 @@ export interface ProcessImageResult {
   originalSrc?: string;
 }
 
-export async function processImage(data: { name: string; url: string }, download: boolean): Promise<ProcessImageResult> {
+export async function processImage(
+  data: { name: string; url: string },
+  download: boolean,
+): Promise<ProcessImageResult> {
   if (download) {
     const localPath = await getLocalImage([data]);
-    if (data.url.startsWith("data:")) {
+    if (data.url.startsWith('data:')) {
       return { displaySrc: data.url, originalSrc: localPath };
     }
     try {
@@ -228,7 +276,7 @@ export async function processImage(data: { name: string; url: string }, download
       return { displaySrc: localPath, originalSrc: localPath };
     }
   }
-  if (data.url.startsWith("data:")) {
+  if (data.url.startsWith('data:')) {
     return { displaySrc: data.url };
   }
   const base64 = await getBase64Image(data.url);
@@ -254,8 +302,8 @@ export function downloadVideoWithProgress(
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open("GET", url, true);
-    xhr.responseType = "blob";
+    xhr.open('GET', url, true);
+    xhr.responseType = 'blob';
     if (options?.withCredentials) {
       xhr.withCredentials = true;
     }
@@ -271,7 +319,7 @@ export function downloadVideoWithProgress(
       if (xhr.status === 200) {
         const blob = xhr.response;
         const downloadUrl = URL.createObjectURL(blob);
-        const a = document.createElement("a");
+        const a = document.createElement('a');
         a.href = downloadUrl;
         a.download = filename;
         a.click();
@@ -282,7 +330,7 @@ export function downloadVideoWithProgress(
       }
     };
 
-    xhr.onerror = () => reject(new Error("网络错误"));
+    xhr.onerror = () => reject(new Error('网络错误'));
     xhr.send();
   });
 }

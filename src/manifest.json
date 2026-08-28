@@ -7,11 +7,7 @@
     "32": "icons/icon32.png",
     "64": "icons/icon64.png"
   },
-  "permissions": [
-    "activeTab",
-    "downloads",
-    "storage"
-  ],
+  "permissions": ["activeTab", "downloads", "storage"],
   "options_page": "options/index.html",
   "background": {
     "service_worker": "service-worker.js"
@@ -21,37 +17,19 @@
   },
   "content_scripts": [
     {
-      "matches": [
-        "https://x.com/*"
-      ],
-      "js": [
-        "content_scripts/twitterCopy.js"
-      ],
-      "css": [
-        "content_scripts/twitterCopy.css"
-      ]
+      "matches": ["https://x.com/*"],
+      "js": ["content_scripts/twitterCopy.js"],
+      "css": ["content_scripts/twitterCopy.css"]
     },
     {
-      "matches": [
-        "https://www.instagram.com/*"
-      ],
-      "js": [
-        "content_scripts/instagramCopy.js"
-      ],
-      "css": [
-        "content_scripts/instagramCopy.css"
-      ]
+      "matches": ["https://www.instagram.com/*"],
+      "js": ["content_scripts/instagramCopy.js"],
+      "css": ["content_scripts/instagramCopy.css"]
     },
     {
-      "matches": [
-        "https://www.tiktok.com/*"
-      ],
-      "js": [
-        "content_scripts/tiktokCopy.js"
-      ],
-      "css": [
-        "content_scripts/tiktokCopy.css"
-      ]
+      "matches": ["https://www.tiktok.com/*"],
+      "js": ["content_scripts/tiktokCopy.js"],
+      "css": ["content_scripts/tiktokCopy.css"]
     }
   ]
 }

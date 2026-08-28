@@ -1,20 +1,20 @@
-import { waitATick } from "../../../shared/utils";
-import { downloadVideoWithProgress } from "../../../shared/utils";
-import { getTweetDetail, TweetMedia } from "./tweetService";
-import { observer, platformState } from "../platform";
+import { waitATick } from '../../../shared/utils';
+import { downloadVideoWithProgress } from '../../../shared/utils';
+import { getTweetDetail, TweetMedia } from './tweetService';
+import { observer, platformState } from '../platform';
 import {
   exitCopyState,
   showDownloadError,
   createProgressCallback,
   showDownloadSuccess,
   showLoadingWithText,
-} from "../../../shared/composables/useVideoDownload";
+} from '../../../shared/composables/useVideoDownload';
 
 async function setVideoSize(articleList: HTMLElement[]) {
   const overlays: HTMLDivElement[] = [];
 
   for (const article of articleList) {
-    const videoElementList = Array.from(article.querySelectorAll("video"));
+    const videoElementList = Array.from(article.querySelectorAll('video'));
     if (videoElementList.length === 0) continue;
 
     for (const videoElement of videoElementList) {
@@ -28,17 +28,17 @@ async function setVideoSize(articleList: HTMLElement[]) {
       if (!parent) continue;
 
       const originalPosition = getComputedStyle(parent).position;
-      if (originalPosition === "static") {
-        parent.style.position = "relative";
+      if (originalPosition === 'static') {
+        parent.style.position = 'relative';
       }
 
-      const overlay = document.createElement("div");
+      const overlay = document.createElement('div');
       overlay.style.cssText =
-        "position:absolute;top:0;left:0;width:100%;height:100%;display:flex;justify-content:center;align-items:center;background-color:black;z-index:1;";
+        'position:absolute;top:0;left:0;width:100%;height:100%;display:flex;justify-content:center;align-items:center;background-color:black;z-index:1;';
 
-      const img = document.createElement("img");
+      const img = document.createElement('img');
       img.src = posterSrc;
-      img.style.cssText = "object-fit:contain;width:100%;height:100%;";
+      img.style.cssText = 'object-fit:contain;width:100%;height:100%;';
 
       overlay.appendChild(img);
       parent.appendChild(overlay);
@@ -59,10 +59,10 @@ async function setVideoSize(articleList: HTMLElement[]) {
 }
 
 function extractVideoFilename(url: string): string {
-  const urlWithoutQuery = url.split("?")[0];
-  const parts = urlWithoutQuery.split("/");
+  const urlWithoutQuery = url.split('?')[0];
+  const parts = urlWithoutQuery.split('/');
   const filename = parts[parts.length - 1];
-  return filename || "video.mp4";
+  return filename || 'video.mp4';
 }
 
 function formatTweetDate(dateString: string): string {
@@ -87,16 +87,16 @@ export async function handleDownloadVideo(): Promise<void> {
     if (!match) return;
     const tweetId = match[1];
 
-    showLoadingWithText("正在获取推文信息...");
+    showLoadingWithText('正在获取推文信息...');
 
     const detail = await getTweetDetail(tweetId);
     if (!detail) {
-      throw new Error("获取推文信息失败");
+      throw new Error('获取推文信息失败');
     }
 
-    const videos = detail.media.filter((m: TweetMedia) => m.type === "video" && m.videoUrl);
+    const videos = detail.media.filter((m: TweetMedia) => m.type === 'video' && m.videoUrl);
     if (videos.length === 0) {
-      throw new Error("该推文没有视频");
+      throw new Error('该推文没有视频');
     }
 
     const total = videos.length;
@@ -114,7 +114,7 @@ export async function handleDownloadVideo(): Promise<void> {
       await downloadVideoWithProgress(
         video.videoUrl,
         filename,
-        createProgressCallback(`正在获取视频 ${i + 1}/${total}`)
+        createProgressCallback(`正在获取视频 ${i + 1}/${total}`),
       );
     }
 

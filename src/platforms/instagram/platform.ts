@@ -1,26 +1,29 @@
-﻿import { createPlatformStore } from "../../shared/composables/createPlatformStore";
-import { createArticleSelectorObserver } from "../../shared/composables/createArticleSelectorObserver";
+﻿import { createPlatformStore } from '../../shared/composables/createPlatformStore';
+import { createArticleSelectorObserver } from '../../shared/composables/createArticleSelectorObserver';
 
-export const { platformState, configItems, updateConfig, loadPlatformConfig } = createPlatformStore("instagram");
+export const { platformState, configItems, updateConfig, loadPlatformConfig } =
+  createPlatformStore('instagram');
 
 export const observer = createArticleSelectorObserver({
-  prefix: "instagram-copy",
-  articleIdPrefix: "instagram-article",
+  prefix: 'instagram-copy',
+  articleIdPrefix: 'instagram-article',
   articleSelector: () => {
     if (document.querySelector('article[role="presentation"]')) {
       return 'article[role="presentation"]';
     }
-    return "article";
+    return 'article';
   },
   singleSelect: true,
-  getObserverTarget: () => document.querySelector("article")?.parentElement ?? null,
+  getObserverTarget: () => document.querySelector('article')?.parentElement ?? null,
   getAnchor: (article) => {
-    if (article.getAttribute("role") !== "presentation") {
-      return article.querySelector('div[role="presentation"]') || article.querySelector("div._aagu");
+    if (article.getAttribute('role') !== 'presentation') {
+      return (
+        article.querySelector('div[role="presentation"]') || article.querySelector('div._aagu')
+      );
     } else {
       const ulType = article.querySelector('div[role="presentation"]:has(img[srcset])');
-      const imgType = article.querySelector("img[srcset]");
-      const videoType = article.querySelector("video");
+      const imgType = article.querySelector('img[srcset]');
+      const videoType = article.querySelector('video');
       return (ulType || imgType || videoType || article) as HTMLElement | null;
     }
   },

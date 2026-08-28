@@ -1,8 +1,8 @@
 export const TRANSLATION_JSON_SCHEMA: Record<string, unknown> = {
-  type: "object",
+  type: 'object',
   properties: {
-    translations: { type: "array", items: { type: "string" } },
+    translations: { type: 'array', items: { type: 'string' } },
   },
-  required: ["translations"],
+  required: ['translations'],
   additionalProperties: false,
 };

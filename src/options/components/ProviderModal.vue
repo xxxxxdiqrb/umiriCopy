@@ -1,9 +1,14 @@
 ﻿<script setup lang="ts">
-import { ref, computed } from "vue";
-import { DEFAULT_SYSTEM_MESSAGE, LLM_PROVIDERS, LLM_PROTOCOLS, type ProviderConfig } from "../types";
-import { BATCH_TRANSLATION_SYSTEM_MESSAGE, JSON_SYSTEM_MESSAGE } from "../../shared/constants";
-import { requestLLM } from "../../shared/llm";
-import { TRANSLATION_JSON_SCHEMA } from "../../shared/llm/schemas";
+import { ref, computed } from 'vue';
+import {
+  DEFAULT_SYSTEM_MESSAGE,
+  LLM_PROVIDERS,
+  LLM_PROTOCOLS,
+  type ProviderConfig,
+} from '../types';
+import { BATCH_TRANSLATION_SYSTEM_MESSAGE, JSON_SYSTEM_MESSAGE } from '../../shared/constants';
+import { requestLLM } from '../../shared/llm';
+import { TRANSLATION_JSON_SCHEMA } from '../../shared/llm/schemas';
 
 const props = defineProps<{
   modelValue: boolean;
@@ -12,7 +17,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  "update:modelValue": [value: boolean];
+  'update:modelValue': [value: boolean];
   save: [provider: ProviderConfig];
 }>();
 
@@ -22,28 +27,28 @@ const testResult = ref<{ success: boolean; message: string } | null>(null);
 const formData = ref<ProviderConfig | null>(null);
 
 const providerOptions = [
-  { value: LLM_PROVIDERS.OPENAI, label: "OpenAI" },
-  { value: LLM_PROVIDERS.GEMINI, label: "Gemini" },
-  { value: LLM_PROVIDERS.ANTHROPIC, label: "Anthropic" },
+  { value: LLM_PROVIDERS.OPENAI, label: 'OpenAI' },
+  { value: LLM_PROVIDERS.GEMINI, label: 'Gemini' },
+  { value: LLM_PROVIDERS.ANTHROPIC, label: 'Anthropic' },
 ];
 
 const protocolOptions = computed(() => {
   if (formData.value?.provider === LLM_PROVIDERS.OPENAI) {
     return [
-      { value: LLM_PROTOCOLS.OPENAI_RESPONSES, label: "Responses" },
-      { value: LLM_PROTOCOLS.OPENAI_COMPATIBLE, label: "Compatible" },
+      { value: LLM_PROTOCOLS.OPENAI_RESPONSES, label: 'Responses' },
+      { value: LLM_PROTOCOLS.OPENAI_COMPATIBLE, label: 'Compatible' },
     ];
   }
   if (formData.value?.provider === LLM_PROVIDERS.GEMINI) {
     return [
-      { value: LLM_PROTOCOLS.GEMINI_GENERATE_CONTENT, label: "generateContent" },
-      { value: LLM_PROTOCOLS.GEMINI_INTERACTIONS, label: "Interactions" },
+      { value: LLM_PROTOCOLS.GEMINI_GENERATE_CONTENT, label: 'generateContent' },
+      { value: LLM_PROTOCOLS.GEMINI_INTERACTIONS, label: 'Interactions' },
     ];
   }
   return [];
 });
 
-const selectProvider = (provider: ProviderConfig["provider"]) => {
+const selectProvider = (provider: ProviderConfig['provider']) => {
   if (!formData.value) return;
   formData.value.provider = provider;
   formData.value.protocol =
@@ -54,7 +59,7 @@ const selectProvider = (provider: ProviderConfig["provider"]) => {
         : LLM_PROTOCOLS.ANTHROPIC;
 };
 
-const selectProtocol = (protocol: ProviderConfig["protocol"]) => {
+const selectProtocol = (protocol: ProviderConfig['protocol']) => {
   if (!formData.value) return;
   formData.value.protocol = protocol;
 };
@@ -64,29 +69,33 @@ const isEditing = computed(() => {
   return props.existingProviders.some((p) => p.id === props.provider?.id);
 });
 
-const modalTitle = computed(() => (isEditing.value ? "编辑配置" : "添加配置"));
+const modalTitle = computed(() => (isEditing.value ? '编辑配置' : '添加配置'));
 
 const closeModal = () => {
-  emit("update:modelValue", false);
+  emit('update:modelValue', false);
   testResult.value = null;
 };
 
 const parseTestTranslationList = (content: string, expectedLength: number) => {
   const cleaned = content
     .trim()
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```$/, "")
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/, '')
     .trim();
   const parsed = JSON.parse(cleaned);
   const list = Array.isArray(parsed) ? parsed : parsed?.translations;
-  if (!Array.isArray(list) || list.length !== expectedLength || list.some((item) => typeof item !== "string")) {
-    throw new Error("模型返回的批量翻译格式不正确");
+  if (
+    !Array.isArray(list) ||
+    list.length !== expectedLength ||
+    list.some((item) => typeof item !== 'string')
+  ) {
+    throw new Error('模型返回的批量翻译格式不正确');
   }
 };
 
 const addVariable = () => {
   if (!formData.value) return;
-  formData.value.customVariables.push({ name: "", value: "" });
+  formData.value.customVariables.push({ name: '', value: '' });
 };
 
 const removeVariable = (index: number) => {
@@ -107,20 +116,21 @@ const testConfig = async () => {
   testResult.value = null;
 
   try {
-    const { model, systemMessage, jsonSystemMessage, batchTranslation, enableJsonSchema } = formData.value;
-    const testContents = ["Hello", "Good morning"];
-    const messages: Array<{ role: "system" | "user"; content: string }> = batchTranslation
+    const { model, systemMessage, jsonSystemMessage, batchTranslation, enableJsonSchema } =
+      formData.value;
+    const testContents = ['Hello', 'Good morning'];
+    const messages: Array<{ role: 'system' | 'user'; content: string }> = batchTranslation
       ? [
-          { role: "system", content: systemMessage },
+          { role: 'system', content: systemMessage },
           {
-            role: "system",
+            role: 'system',
             content: enableJsonSchema ? BATCH_TRANSLATION_SYSTEM_MESSAGE : jsonSystemMessage,
           },
-          { role: "user", content: JSON.stringify(testContents) },
+          { role: 'user', content: JSON.stringify(testContents) },
         ]
       : [
-          { role: "system", content: systemMessage },
-          { role: "user", content: testContents[0] },
+          { role: 'system', content: systemMessage },
+          { role: 'user', content: testContents[0] },
         ];
 
     const response = await requestLLM(formData.value, {
@@ -133,11 +143,11 @@ const testConfig = async () => {
       parseTestTranslationList(response.text, testContents.length);
     }
 
-    testResult.value = { success: true, message: "连接成功！配置有效。" };
+    testResult.value = { success: true, message: '连接成功！配置有效。' };
   } catch (error) {
     testResult.value = {
       success: false,
-      message: error instanceof Error ? error.message : "连接失败",
+      message: error instanceof Error ? error.message : '连接失败',
     };
   } finally {
     isTesting.value = false;
@@ -146,9 +156,9 @@ const testConfig = async () => {
 
 const save = () => {
   if (!formData.value) return;
-  emit("save", {
+  emit('save', {
     ...formData.value,
-    suffix: formData.value.suffix || "",
+    suffix: formData.value.suffix || '',
     batchTranslation: formData.value.batchTranslation ?? false,
     enableJsonSchema: Boolean(formData.value.batchTranslation && formData.value.enableJsonSchema),
     customVariables: [...formData.value.customVariables],
@@ -161,7 +171,7 @@ const onOpen = () => {
     const customVariables = props.provider.customVariables || [];
     formData.value = {
       ...props.provider,
-      suffix: props.provider.suffix || "",
+      suffix: props.provider.suffix || '',
       batchTranslation: props.provider.batchTranslation ?? false,
       enableJsonSchema: props.provider.enableJsonSchema ?? false,
       customVariables: Object.values(customVariables).map((v) => ({ ...v })),
@@ -181,7 +191,11 @@ defineExpose({ onOpen });
         <button class="btn-close" @click="closeModal">×</button>
       </div>
       <div class="modal-body">
-        <div v-if="testResult" class="test-result" :class="testResult.success ? 'success' : 'error'">
+        <div
+          v-if="testResult"
+          class="test-result"
+          :class="testResult.success ? 'success' : 'error'"
+        >
           {{ testResult.message }}
         </div>
         <div class="form-group">
@@ -245,15 +259,26 @@ defineExpose({ onOpen });
         <div class="form-group">
           <label>附带后缀</label>
           <p class="field-description">翻译完成后自动追加在最后一行（如：由 DeepSeek 翻译）</p>
-          <textarea v-model="formData.suffix" rows="2" placeholder="如：[由 AI 自动翻译] 或 自定义署名说明"></textarea>
+          <textarea
+            v-model="formData.suffix"
+            rows="2"
+            placeholder="如：[由 AI 自动翻译] 或 自定义署名说明"
+          ></textarea>
         </div>
 
         <div class="form-group">
           <label>自定义参数 (如 temperature, stream 等)</label>
-          <p class="field-description">为保证响应可被扩展解析，实际请求中的 stream 始终固定为 false。</p>
+          <p class="field-description">
+            为保证响应可被扩展解析，实际请求中的 stream 始终固定为 false。
+          </p>
           <div class="custom-variables">
             <div v-for="(v, index) in formData.customVariables" :key="index" class="variable-row">
-              <input v-model="v.name" type="text" placeholder="参数名 (如 temperature)" class="var-name" />
+              <input
+                v-model="v.name"
+                type="text"
+                placeholder="参数名 (如 temperature)"
+                class="var-name"
+              />
               <input v-model="v.value" type="text" placeholder="值 (如 1.3)" class="var-value" />
               <button class="btn-remove" @click="removeVariable(index)">×</button>
             </div>
@@ -265,7 +290,9 @@ defineExpose({ onOpen });
           <label>启用多条合并提交（批量请求）</label>
           <div class="toggle-row">
             <div>
-              <p class="field-description">开启后合并提交多条文本；关闭时使用 Promise.all 逐条并发翻译。</p>
+              <p class="field-description">
+                开启后合并提交多条文本；关闭时使用 Promise.all 逐条并发翻译。
+              </p>
             </div>
             <button
               type="button"
@@ -300,14 +327,15 @@ defineExpose({ onOpen });
         <div v-if="formData.batchTranslation && !formData.enableJsonSchema" class="form-group">
           <label>JSON 格式约束</label>
           <p class="field-description">
-            作为第二条 system message 发送给模型以约束输出为 JSON 数组。如果不清楚这段提示词的用途，请不要修改，以免批量翻译结果无法解析。
+            作为第二条 system message 发送给模型以约束输出为 JSON
+            数组。如果不清楚这段提示词的用途，请不要修改，以免批量翻译结果无法解析。
           </p>
           <textarea v-model="formData.jsonSystemMessage" rows="4"></textarea>
         </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-outline" :disabled="isTesting" @click="testConfig">
-          {{ isTesting ? "测试中..." : "测试连接" }}
+          {{ isTesting ? '测试中...' : '测试连接' }}
         </button>
         <button class="btn btn-outline" @click="resetDefaultPrompts">恢复默认提示词</button>
         <button class="btn btn-outline" @click="closeModal">取消</button>
@@ -414,9 +442,9 @@ $danger: rgb(244, 33, 46);
     color: $text-primary;
   }
 
-  input[type="text"],
-  input[type="password"],
-  input[type="number"],
+  input[type='text'],
+  input[type='password'],
+  input[type='number'],
   textarea {
     width: 100%;
     padding: 10px 12px;
@@ -427,7 +455,8 @@ $danger: rgb(244, 33, 46);
     color: $text-primary;
     outline: none;
     box-sizing: border-box;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family:
+      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 
     &:focus {
       border-color: $text-primary;
@@ -478,7 +507,7 @@ $danger: rgb(244, 33, 46);
     width: 1px;
     height: 100%;
     background: rgb(15, 20, 25);
-    content: "";
+    content: '';
     pointer-events: none;
   }
 
@@ -587,7 +616,8 @@ $danger: rgb(244, 33, 46);
     border-radius: 8px;
     color: $text-primary;
     outline: none;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family:
+      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 
     &:focus {
       border-color: $accent;
@@ -626,7 +656,7 @@ $danger: rgb(244, 33, 46);
   cursor: pointer;
   border-radius: 8px;
   transition: all 0.2s;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 
   &:hover {
     border-color: $text-primary;
@@ -669,7 +699,7 @@ $danger: rgb(244, 33, 46);
   border-radius: 9999px;
   background: transparent;
   transition: background-color 0.2s;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 
   &:disabled {
     opacity: 0.5;

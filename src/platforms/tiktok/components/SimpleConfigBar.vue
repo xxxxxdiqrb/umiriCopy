@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const props = defineProps<{
+defineProps<{
   visible: boolean;
 }>();
 
@@ -51,7 +51,7 @@ const emit = defineEmits<{
   font-size: 16px;
   cursor: pointer;
   transition: background-color 0.2s;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 
   &:active {
     opacity: 0.7;

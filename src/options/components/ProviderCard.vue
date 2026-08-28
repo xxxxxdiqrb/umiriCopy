@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { LLM_PROVIDERS, type ProviderConfig } from "../types";
+import { LLM_PROVIDERS, type ProviderConfig } from '../types';
 
 defineProps<{
   provider: ProviderConfig;
@@ -12,11 +12,11 @@ const emit = defineEmits<{
   setDefault: [provider: ProviderConfig];
 }>();
 
-const providerLabels: Record<ProviderConfig["provider"], string> = {
-  [LLM_PROVIDERS.OPENAI]: "OpenAI",
-  [LLM_PROVIDERS.OPENAI_COMPATIBLE]: "OpenAI Compatible",
-  [LLM_PROVIDERS.GEMINI]: "Gemini",
-  [LLM_PROVIDERS.ANTHROPIC]: "Anthropic",
+const providerLabels: Record<ProviderConfig['provider'], string> = {
+  [LLM_PROVIDERS.OPENAI]: 'OpenAI',
+  [LLM_PROVIDERS.OPENAI_COMPATIBLE]: 'OpenAI Compatible',
+  [LLM_PROVIDERS.GEMINI]: 'Gemini',
+  [LLM_PROVIDERS.ANTHROPIC]: 'Anthropic',
 };
 </script>
 
@@ -28,7 +28,9 @@ const providerLabels: Record<ProviderConfig["provider"], string> = {
         <span v-if="isDefault" class="default-badge">默认</span>
       </div>
       <div class="provider-actions">
-        <button v-if="!isDefault" class="btn btn-outline" @click="emit('setDefault', provider)">设为默认</button>
+        <button v-if="!isDefault" class="btn btn-outline" @click="emit('setDefault', provider)">
+          设为默认
+        </button>
         <button class="btn btn-outline" @click="emit('edit', provider)">编辑</button>
         <button class="btn btn-outline btn-danger" @click="emit('delete', provider)">删除</button>
       </div>
@@ -129,7 +131,7 @@ $danger: rgb(244, 33, 46);
   border-radius: 9999px;
   background: transparent;
   transition: background-color 0.2s;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
 .btn-outline {

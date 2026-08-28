@@ -1,7 +1,7 @@
-import type { ProviderConfig } from "../../options/types";
+import type { ProviderConfig } from '../../options/types';
 
 export interface LLMMessage {
-  role: "system" | "user" | "assistant";
+  role: 'system' | 'user' | 'assistant';
   content: string;
 }
 

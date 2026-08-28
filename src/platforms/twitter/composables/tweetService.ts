@@ -72,7 +72,7 @@ export async function fetchTweetDetail(tweetId: string): Promise<unknown> {
     xhr.open('GET', url, true);
     xhr.setRequestHeader(
       'authorization',
-      'Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA'
+      'Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA',
     );
     xhr.setRequestHeader('x-csrf-token', ct0);
     xhr.setRequestHeader('x-twitter-active-user', 'yes');
@@ -159,7 +159,7 @@ function parseTweetResult(result: RawTweetResult): TweetDetail {
       };
       if (m.video_info && m.type === 'video') {
         const mp4Variants = m.video_info.variants.filter(
-          (v) => v.content_type === 'video/mp4' && v.bitrate
+          (v) => v.content_type === 'video/mp4' && v.bitrate,
         );
         if (mp4Variants.length > 0) {
           const best = mp4Variants.sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0))[0];

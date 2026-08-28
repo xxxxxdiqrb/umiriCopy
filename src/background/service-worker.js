@@ -1,13 +1,13 @@
 chrome.runtime.onMessage.addListener(handleMessages);
 function handleMessages(message, sender, sendResponse) {
   switch (message.type) {
-    case "downloadImageList":
+    case 'downloadImageList':
       downloadImageHandler(message, sendResponse);
       break;
-    case "fetchImageAsBase64":
+    case 'fetchImageAsBase64':
       fetchImageAsBase64Handler(message, sendResponse);
       break;
-    case "GMFetch":
+    case 'GMFetch':
       GMFetch(message, sendResponse);
       break;
   }
@@ -18,7 +18,7 @@ async function GMFetch(message, sendResponse) {
   try {
     const res = await fetch(message.url, message.option);
     if (res.ok) {
-      const format = await res[message.formatType || "text"]();
+      const format = await res[message.formatType || 'text']();
       sendResponse({
         isSuccess: true,
         data: format,
@@ -85,7 +85,7 @@ function blobToBase64(blob) {
   });
 }
 
-const imageDirName = "twitterImage";
+const imageDirName = 'twitterImage';
 function downloadImage(dataList) {
   return new Promise((res, rej) => {
     const absolutePath = [];
@@ -96,7 +96,7 @@ function downloadImage(dataList) {
         url: data.url,
         saveAs: true,
         filename: `${imageDirName}/${data.name}`,
-        conflictAction: "overwrite",
+        conflictAction: 'overwrite',
       });
     }
 
@@ -104,11 +104,11 @@ function downloadImage(dataList) {
       if (e.filename?.current) {
         absolutePath.push(e.filename?.current);
       }
-      if (e.state?.current === "complete" && absolutePath.length === dataList.length) {
+      if (e.state?.current === 'complete' && absolutePath.length === dataList.length) {
         removeHandler();
         res(absolutePath);
       }
-      if (e.state?.current === "interrupted") {
+      if (e.state?.current === 'interrupted') {
         removeHandler();
         rej(e.state);
       }

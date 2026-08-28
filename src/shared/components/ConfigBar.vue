@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { ConfigItem } from "../types";
-import { computed } from "vue";
+import type { ConfigItem } from '../types';
+import { computed } from 'vue';
 
 const props = defineProps<{
   visible: boolean;
@@ -14,7 +14,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   cancel: [];
   submit: [];
-  "update:item": [key: string, value: boolean | string];
+  'update:item': [key: string, value: boolean | string];
   downloadVideo: [];
 }>();
 
@@ -28,14 +28,14 @@ const visibleItems = computed(() => {
 });
 
 const handleToggle = (item: ConfigItem) => {
-  if (item.type === "toggle") {
-    emit("update:item", item.key, !item.value);
+  if (item.type === 'toggle') {
+    emit('update:item', item.key, !item.value);
   }
 };
 
 const handleSelectChange = (item: ConfigItem, event: Event) => {
   const target = event.target as HTMLSelectElement;
-  emit("update:item", item.key, target.value);
+  emit('update:item', item.key, target.value);
 };
 </script>
 
@@ -51,7 +51,11 @@ const handleSelectChange = (item: ConfigItem, event: Event) => {
         </div>
         <div v-else-if="item.type === 'select'" class="config-item">
           <span class="config-label">{{ item.label }}</span>
-          <select class="provider-select" :value="item.value" @change="handleSelectChange(item, $event)">
+          <select
+            class="provider-select"
+            :value="item.value"
+            @change="handleSelectChange(item, $event)"
+          >
             <option value="" disabled>请选择配置</option>
             <option v-for="opt in item.options" :key="opt.value" :value="opt.value">
               {{ opt.label }}
@@ -65,7 +69,9 @@ const handleSelectChange = (item: ConfigItem, event: Event) => {
       </div>
       <button class="cancel-btn" @click="emit('cancel')">取消</button>
       <button class="submit-btn" @click="emit('submit')">{{ submitLabel }}</button>
-      <button v-if="showDownloadVideo" class="download-btn" @click="emit('downloadVideo')">下载视频</button>
+      <button v-if="showDownloadVideo" class="download-btn" @click="emit('downloadVideo')">
+        下载视频
+      </button>
     </div>
   </div>
 </template>
@@ -108,13 +114,13 @@ const handleSelectChange = (item: ConfigItem, event: Event) => {
 .config-label {
   color: rgb(239, 243, 244);
   font-size: 15px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
 .config-value {
   color: white;
   font-size: 15px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
 .provider-select {
@@ -124,7 +130,7 @@ const handleSelectChange = (item: ConfigItem, event: Event) => {
   border-radius: 8px;
   padding: 6px 10px;
   font-size: 14px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   cursor: pointer;
   min-width: 120px;
   outline: none;
@@ -179,7 +185,7 @@ const handleSelectChange = (item: ConfigItem, event: Event) => {
   font-size: 16px;
   cursor: pointer;
   transition: background-color 0.2s;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 
   &:active {
     opacity: 0.7;

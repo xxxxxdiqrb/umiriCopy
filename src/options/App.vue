@@ -1,12 +1,12 @@
 ﻿<script setup lang="ts">
-import { ref, onMounted, nextTick } from "vue";
-import type { ProviderConfig, OptionsData, ExportedOptionsData } from "./types";
-import { createDefaultProvider, DEFAULT_PLATFORM_CONFIGS, sanitizeOptionsData } from "./types";
-import ProviderCard from "./components/ProviderCard.vue";
-import ProviderModal from "./components/ProviderModal.vue";
-import PlatformSettingsCard from "./components/PlatformSettingsCard.vue";
+import { ref, onMounted, nextTick } from 'vue';
+import type { ProviderConfig, OptionsData, ExportedOptionsData } from './types';
+import { createDefaultProvider, DEFAULT_PLATFORM_CONFIGS, sanitizeOptionsData } from './types';
+import ProviderCard from './components/ProviderCard.vue';
+import ProviderModal from './components/ProviderModal.vue';
+import PlatformSettingsCard from './components/PlatformSettingsCard.vue';
 
-const activeTab = ref<"providers" | "platforms">("providers");
+const activeTab = ref<'providers' | 'platforms'>('providers');
 
 const options = ref<OptionsData>({
   providers: [],
@@ -22,7 +22,7 @@ const editingProvider = ref<ProviderConfig | null>(null);
 const modalRef = ref<InstanceType<typeof ProviderModal> | null>(null);
 const fileInputRef = ref<HTMLInputElement | null>(null);
 
-const toastMessage = ref("");
+const toastMessage = ref('');
 const showToast = ref(false);
 let toastTimer: number | null = null;
 
@@ -36,7 +36,7 @@ const displayToast = (msg: string) => {
 };
 
 onMounted(async () => {
-  const result = await chrome.storage.local.get("options");
+  const result = await chrome.storage.local.get('options');
   if (result.options) {
     options.value = sanitizeOptionsData(result.options);
   }
@@ -103,22 +103,22 @@ const exportConfig = () => {
   try {
     const manifest = chrome.runtime.getManifest();
     const exportData: ExportedOptionsData = {
-      version: manifest?.version || "0.1.4",
+      version: manifest?.version || '0.1.4',
       exportedAt: new Date().toISOString(),
       data: JSON.parse(JSON.stringify(options.value)),
     };
 
     const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-      type: "application/json;charset=utf-8",
+      type: 'application/json;charset=utf-8',
     });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    const a = document.createElement('a');
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     a.href = url;
     a.download = `umiriCopy-config-${dateStr}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    displayToast("配置已成功导出");
+    displayToast('配置已成功导出');
   } catch (error) {
     alert(`导出失败: ${error instanceof Error ? error.message : String(error)}`);
   }
@@ -138,18 +138,20 @@ const handleImportFile = async (event: Event) => {
     const raw = JSON.parse(text);
     const sanitized = sanitizeOptionsData(raw);
 
-    if (!confirm("导入将覆盖当前全部配置，是否继续？")) {
-      target.value = "";
+    if (!confirm('导入将覆盖当前全部配置，是否继续？')) {
+      target.value = '';
       return;
     }
 
     options.value = sanitized;
     await saveOptions();
-    displayToast("配置已成功导入并保存");
+    displayToast('配置已成功导入并保存');
   } catch (error) {
-    alert(`导入失败，配置文件格式不正确: ${error instanceof Error ? error.message : String(error)}`);
+    alert(
+      `导入失败，配置文件格式不正确: ${error instanceof Error ? error.message : String(error)}`,
+    );
   } finally {
-    target.value = "";
+    target.value = '';
   }
 };
 </script>
@@ -159,9 +161,20 @@ const handleImportFile = async (event: Event) => {
     <div class="header">
       <span class="app-name">扩展配置管理</span>
       <div class="header-actions">
-        <input ref="fileInputRef" type="file" accept=".json" class="hidden-file-input" @change="handleImportFile" />
+        <input
+          ref="fileInputRef"
+          type="file"
+          accept=".json"
+          class="hidden-file-input"
+          @change="handleImportFile"
+        />
         <button class="header-btn" title="导入配置文件" @click="triggerImport">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="btn-svg" aria-hidden="true">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 448 512"
+            class="btn-svg"
+            aria-hidden="true"
+          >
             <path
               d="M256 32c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 210.7-41.4-41.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l96 96c12.5 12.5 32.8 12.5 45.3 0l96-96c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 242.7 256 32zM64 320c-35.3 0-64 28.7-64 64l0 32c0 35.3 28.7 64 64 64l320 0c35.3 0 64-28.7 64-64l0-32c0-35.3-28.7-64-64-64l-46.9 0-56.6 56.6c-31.2 31.2-81.9 31.2-113.1 0L110.9 320 64 320zm304 56a24 24 0 1 1 0 48 24 24 0 1 1 0-48z"
             />
@@ -169,7 +182,12 @@ const handleImportFile = async (event: Event) => {
           <span>导入配置</span>
         </button>
         <button class="header-btn" title="导出配置文件为 JSON" @click="exportConfig">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" class="btn-svg" aria-hidden="true">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 448 512"
+            class="btn-svg"
+            aria-hidden="true"
+          >
             <path
               d="M256 109.3L256 320c0 17.7-14.3 32-32 32s-32-14.3-32-32l0-210.7-41.4 41.4c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l96-96c12.5-12.5 32.8-12.5 45.3 0l96 96c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L256 109.3zM224 400c44.2 0 80-35.8 80-80l80 0c35.3 0 64 28.7 64 64l0 32c0 35.3-28.7 64-64 64L64 480c-35.3 0-64-28.7-64-64l0-32c0-35.3 28.7-64 64-64l80 0c0 44.2 35.8 80 80 80zm144 24a24 24 0 1 0 0-48 24 24 0 1 0 0 48z"
             />
@@ -183,7 +201,12 @@ const handleImportFile = async (event: Event) => {
           rel="noopener noreferrer"
           title="GitHub 仓库"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" class="btn-svg" aria-hidden="true">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 496 512"
+            class="btn-svg"
+            aria-hidden="true"
+          >
             <path
               d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"
             />
@@ -199,8 +222,20 @@ const handleImportFile = async (event: Event) => {
 
     <!-- 选项卡导航 -->
     <div class="tabs">
-      <button class="tab-btn" :class="{ active: activeTab === 'providers' }" @click="activeTab = 'providers'">AI 翻译服务</button>
-      <button class="tab-btn" :class="{ active: activeTab === 'platforms' }" @click="activeTab = 'platforms'">平台默认配置</button>
+      <button
+        class="tab-btn"
+        :class="{ active: activeTab === 'providers' }"
+        @click="activeTab = 'providers'"
+      >
+        AI 翻译服务
+      </button>
+      <button
+        class="tab-btn"
+        :class="{ active: activeTab === 'platforms' }"
+        @click="activeTab = 'platforms'"
+      >
+        平台默认配置
+      </button>
     </div>
 
     <!-- AI 翻译配置板块 -->
@@ -213,7 +248,9 @@ const handleImportFile = async (event: Event) => {
       </button>
 
       <div class="provider-list">
-        <div v-if="options.providers.length === 0" class="empty-state">暂无配置，点击上方按钮添加</div>
+        <div v-if="options.providers.length === 0" class="empty-state">
+          暂无配置，点击上方按钮添加
+        </div>
 
         <ProviderCard
           v-for="provider in options.providers"
@@ -250,7 +287,13 @@ const handleImportFile = async (event: Event) => {
       </div>
     </div>
 
-    <ProviderModal ref="modalRef" v-model="showModal" :provider="editingProvider" :existing-providers="options.providers" @save="saveProvider" />
+    <ProviderModal
+      ref="modalRef"
+      v-model="showModal"
+      :provider="editingProvider"
+      :existing-providers="options.providers"
+      @save="saveProvider"
+    />
   </div>
 </template>
 
@@ -271,7 +314,7 @@ $accent-hover: rgb(26, 140, 216);
   max-width: 1024px;
   margin: 0 auto;
   box-sizing: border-box;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
 .header {

@@ -5,7 +5,7 @@ const openOptions = () => {
   if (chrome.runtime.openOptionsPage) {
     chrome.runtime.openOptionsPage();
   } else {
-    window.open(chrome.runtime.getURL("options/options.html"));
+    window.open(chrome.runtime.getURL('options/options.html'));
   }
 };
 </script>
@@ -76,9 +76,7 @@ const openOptions = () => {
   cursor: pointer;
   user-select: none;
   transition: background-color 0.2s;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
-    sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
 .gear-icon {

@@ -1,10 +1,10 @@
-import { formatDateForFilename } from "../../shared/utils";
+import { formatDateForFilename } from '../../shared/utils';
 
 export function extractTweetTextContent(tweetTextElement: HTMLElement): string {
   const childrenList = Array.from(tweetTextElement.children);
-  let textContent = "";
+  let textContent = '';
   for (const children of childrenList) {
-    if (children.nodeName === "IMG") {
+    if (children.nodeName === 'IMG') {
       textContent += (children as HTMLImageElement).alt;
     } else {
       textContent += (children as HTMLElement).textContent;
@@ -14,21 +14,25 @@ export function extractTweetTextContent(tweetTextElement: HTMLElement): string {
 }
 
 export function getTweetUserName(article: HTMLElement): string {
-  const userInfoElement = article.querySelector('div[data-testid="User-Name"]') as HTMLElement | null;
+  const userInfoElement = article.querySelector(
+    'div[data-testid="User-Name"]',
+  ) as HTMLElement | null;
   if (!userInfoElement) {
-    return "unknown";
+    return 'unknown';
   }
   const userNameText = userInfoElement.children[0].textContent;
-  const userNameElement = Array.from(userInfoElement.querySelectorAll("span")).find((item) => item.textContent === userNameText);
+  const userNameElement = Array.from(userInfoElement.querySelectorAll('span')).find(
+    (item) => item.textContent === userNameText,
+  );
   if (!userNameElement) {
-    return "unknown";
+    return 'unknown';
   }
   return extractTweetTextContent(userNameElement as HTMLElement);
 }
 
 export function getTweetTime(article: HTMLElement): Date {
-  const timeElement = article.querySelector("a > time");
-  return timeElement ? new Date(timeElement.getAttribute("datetime")!) : new Date();
+  const timeElement = article.querySelector('a > time');
+  return timeElement ? new Date(timeElement.getAttribute('datetime')!) : new Date();
 }
 
 export function getTweetName(article: HTMLElement): string {

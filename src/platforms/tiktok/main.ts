@@ -1,6 +1,6 @@
-import { createApp } from "vue";
-import App from "./App.vue";
-import { createElement } from "../../shared/utils";
+import { createApp } from 'vue';
+import App from './App.vue';
+import { createElement } from '../../shared/utils';
 
 async function init() {
   const globalHost = createElement(`

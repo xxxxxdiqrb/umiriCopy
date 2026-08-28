@@ -1,6 +1,6 @@
 ﻿<script setup lang="ts">
-import { computed } from "vue";
-import { appState, closeActionBar, type ActionBarAction } from "../store";
+import { computed } from 'vue';
+import { appState, closeActionBar, type ActionBarAction } from '../store';
 
 const computedActions = computed<ActionBarAction[]>(() => {
   if (appState.actionBar.actions && appState.actionBar.actions.length > 0) {
@@ -9,16 +9,16 @@ const computedActions = computed<ActionBarAction[]>(() => {
 
   const actions: ActionBarAction[] = [
     {
-      label: appState.actionBar.buttonText || "确定",
-      type: appState.actionBar.retryVisible ? "secondary" : "primary",
+      label: appState.actionBar.buttonText || '确定',
+      type: appState.actionBar.retryVisible ? 'secondary' : 'primary',
       handler: appState.actionBar.handler,
     },
   ];
 
   if (appState.actionBar.retryVisible) {
     actions.push({
-      label: "重试",
-      type: "primary",
+      label: '重试',
+      type: 'primary',
       handler: appState.actionBar.retryHandler,
     });
   }
@@ -90,9 +90,7 @@ const handleActionClick = (action: ActionBarAction) => {
   box-sizing: border-box;
   margin-bottom: 20px;
   color: rgb(239, 243, 244);
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
-    sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   font-size: 15px;
   line-height: 1.5;
   text-align: center;
@@ -112,9 +110,7 @@ const handleActionClick = (action: ActionBarAction) => {
   font-weight: bold;
   line-height: 1.5;
   cursor: pointer;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
-    sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   transition: opacity 0.3s;
 
   &:hover {
