@@ -1,5 +1,5 @@
 ﻿import { reactive } from "vue";
-import { normalizeProviderConfig, type ProviderConfig } from "../options/types";
+import { LLM_PROVIDERS, LLM_PROTOCOLS, normalizeProviderConfig, type ProviderConfig } from "../options/types";
 import { JSON_SYSTEM_MESSAGE } from "./constants";
 
 export interface ActionBarAction {
@@ -32,6 +32,8 @@ export interface AppState {
   selectedArticles: Set<string>;
   options: {
     apiKey: string;
+    provider: import("../options/types").LLMProvider;
+    protocol: import("../options/types").LLMProtocol;
     model: string;
     baseUrl: string;
     systemMessage: string;
@@ -66,6 +68,8 @@ export const appState = reactive<AppState>({
   selectedArticles: new Set(),
   options: {
     apiKey: "",
+    provider: LLM_PROVIDERS.OPENAI,
+    protocol: LLM_PROTOCOLS.OPENAI_COMPATIBLE,
     model: "",
     baseUrl: "",
     systemMessage: "",
@@ -81,7 +85,7 @@ export const appState = reactive<AppState>({
 });
 
 export function applyProvider(provider: ProviderConfig) {
-  const { apiKey, model, baseUrl, systemMessage, jsonSystemMessage, suffix, customVariables, batchTranslation, enableJsonSchema } = provider;
+  const { apiKey, model, baseUrl, systemMessage, jsonSystemMessage, suffix, customVariables, batchTranslation, enableJsonSchema, provider: providerType, protocol } = provider;
   const customVars: Record<string, unknown> = {};
   if (customVariables && Array.isArray(customVariables)) {
     for (const v of customVariables) {
@@ -99,6 +103,8 @@ export function applyProvider(provider: ProviderConfig) {
   }
   Object.assign(appState.options, {
     apiKey,
+    provider: providerType,
+    protocol,
     model,
     baseUrl,
     systemMessage,

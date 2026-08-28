@@ -5,9 +5,29 @@ export interface CustomVariable {
   value: string;
 }
 
+export const LLM_PROVIDERS = {
+  OPENAI: "openai",
+  OPENAI_COMPATIBLE: "openai-compatible",
+  GEMINI: "gemini",
+  ANTHROPIC: "anthropic",
+} as const;
+
+export const LLM_PROTOCOLS = {
+  OPENAI_COMPATIBLE: "openai-compatible",
+  OPENAI_RESPONSES: "openai-responses",
+  GEMINI_GENERATE_CONTENT: "gemini-generate-content",
+  GEMINI_INTERACTIONS: "gemini-interactions",
+  ANTHROPIC: "anthropic",
+} as const;
+export type LLMProtocol = (typeof LLM_PROTOCOLS)[keyof typeof LLM_PROTOCOLS];
+
+export type LLMProvider = (typeof LLM_PROVIDERS)[keyof typeof LLM_PROVIDERS];
+
 export interface ProviderConfig {
   id: string;
   name: string;
+  provider: LLMProvider;
+  protocol: LLMProtocol;
   baseUrl: string;
   apiKey: string;
   model: string;
@@ -67,6 +87,8 @@ export const DEFAULT_SYSTEM_MESSAGE = "将提供的推特内容翻译为中文�
 export const createDefaultProvider = (): ProviderConfig => ({
   id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
   name: "DeepSeek",
+  provider: LLM_PROVIDERS.OPENAI,
+  protocol: LLM_PROTOCOLS.OPENAI_COMPATIBLE,
   baseUrl: "https://api.deepseek.com/v1",
   apiKey: "",
   model: "deepseek-v4-flash",
@@ -98,6 +120,12 @@ export function normalizeProviderConfig(provider: Partial<ProviderConfig>): Prov
   return {
     id: typeof provider.id === "string" && provider.id.trim() ? provider.id : defaults.id,
     name: typeof provider.name === "string" && provider.name.trim() ? provider.name : defaults.name,
+    provider: provider.provider === LLM_PROVIDERS.OPENAI_COMPATIBLE ? LLM_PROVIDERS.OPENAI : Object.values(LLM_PROVIDERS).includes(provider.provider as LLMProvider) ? (provider.provider as LLMProvider) : defaults.provider,
+    protocol: Object.values(LLM_PROTOCOLS).includes(provider.protocol as LLMProtocol)
+      ? (provider.protocol as LLMProtocol)
+      : provider.provider === LLM_PROVIDERS.OPENAI_COMPATIBLE
+        ? LLM_PROTOCOLS.OPENAI_COMPATIBLE
+        : defaults.protocol,
     baseUrl: typeof provider.baseUrl === "string" ? provider.baseUrl : defaults.baseUrl,
     apiKey: typeof provider.apiKey === "string" ? provider.apiKey : defaults.apiKey,
     model: typeof provider.model === "string" ? provider.model : defaults.model,

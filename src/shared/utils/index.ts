@@ -1,5 +1,7 @@
 ﻿import { appState } from "../store";
 import { BATCH_TRANSLATION_SYSTEM_MESSAGE } from "../constants";
+import { requestLLM } from "../llm";
+import { TRANSLATION_JSON_SCHEMA } from "../llm/schemas";
 
 export type CopyStage = "text" | "alt" | "translation" | "screenshot" | "image" | "resource";
 
@@ -22,34 +24,26 @@ export interface TranslationTextItem {
   content: string;
 }
 
-type ChatMessage = {
-  role: "system" | "user";
-  content: string;
-};
-
-function createChatCompletionRequest(messages: ChatMessage[], parameters: Record<string, unknown> = {}) {
-  return {
-    headers: {
-      "content-type": "application/json",
-      Authorization: "Bearer " + appState.options.apiKey,
-    },
-    method: "POST",
-    body: JSON.stringify({
-      ...appState.options.otherParam,
+async function requestChatCompletion(messages: { role: "system" | "user" | "assistant"; content: string }[], parameters: Record<string, unknown> = {}) {
+  const { response_format, jsonSchema, ...providerParameters } = parameters;
+  const response = await requestLLM(
+    {
+      id: "active",
+      name: "active",
+      provider: appState.options.provider,
+      protocol: appState.options.protocol,
+      baseUrl: appState.options.baseUrl,
+      apiKey: appState.options.apiKey,
       model: appState.options.model,
-      messages,
-      ...parameters,
-      stream: false,
-    }),
-  };
-}
-
-async function requestChatCompletion(messages: ChatMessage[], parameters: Record<string, unknown> = {}) {
-  return sendChromeMessage("GMFetch", {
-    url: appState.options.baseUrl + "/chat/completions",
-    option: createChatCompletionRequest(messages, parameters),
-    formatType: "json",
-  });
+      systemMessage: appState.options.systemMessage,
+      jsonSystemMessage: appState.options.jsonSystemMessage,
+      customVariables: Object.entries(appState.options.otherParam).map(([name, value]) => ({ name, value: String(value) })),
+      batchTranslation: appState.options.batchTranslation,
+      enableJsonSchema: appState.options.enableJsonSchema,
+    },
+    { model: appState.options.model, messages, jsonMode: response_format !== undefined, jsonSchema: jsonSchema as Record<string, unknown> | undefined, parameters: providerParameters },
+  );
+  return { choices: [{ message: { content: response.text } }] };
 }
 
 function cleanMarkdownJson(raw: unknown): string {
@@ -107,7 +101,7 @@ export async function translateTextContents(contents: string[], translate: boole
         { role: "system", content: BATCH_TRANSLATION_SYSTEM_MESSAGE },
         { role: "user", content: JSON.stringify(contents) },
       ],
-      { response_format: { type: "json_object" } },
+      { response_format: { type: "json_object" }, jsonSchema: TRANSLATION_JSON_SCHEMA },
     );
     try {
       return parseTranslationList(getResponseContent(data), contents.length);

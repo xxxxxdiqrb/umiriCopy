@@ -1,7 +1,9 @@
 ﻿<script setup lang="ts">
 import { ref, computed } from "vue";
-import { DEFAULT_SYSTEM_MESSAGE, type ProviderConfig, type CustomVariable } from "../types";
+import { DEFAULT_SYSTEM_MESSAGE, LLM_PROVIDERS, LLM_PROTOCOLS, type ProviderConfig } from "../types";
 import { BATCH_TRANSLATION_SYSTEM_MESSAGE, JSON_SYSTEM_MESSAGE } from "../../shared/constants";
+import { requestLLM } from "../../shared/llm";
+import { TRANSLATION_JSON_SCHEMA } from "../../shared/llm/schemas";
 
 const props = defineProps<{
   modelValue: boolean;
@@ -19,6 +21,44 @@ const testResult = ref<{ success: boolean; message: string } | null>(null);
 
 const formData = ref<ProviderConfig | null>(null);
 
+const providerOptions = [
+  { value: LLM_PROVIDERS.OPENAI, label: "OpenAI" },
+  { value: LLM_PROVIDERS.GEMINI, label: "Gemini" },
+  { value: LLM_PROVIDERS.ANTHROPIC, label: "Anthropic" },
+];
+
+const protocolOptions = computed(() => {
+  if (formData.value?.provider === LLM_PROVIDERS.OPENAI) {
+    return [
+      { value: LLM_PROTOCOLS.OPENAI_RESPONSES, label: "Responses" },
+      { value: LLM_PROTOCOLS.OPENAI_COMPATIBLE, label: "Compatible" },
+    ];
+  }
+  if (formData.value?.provider === LLM_PROVIDERS.GEMINI) {
+    return [
+      { value: LLM_PROTOCOLS.GEMINI_GENERATE_CONTENT, label: "generateContent" },
+      { value: LLM_PROTOCOLS.GEMINI_INTERACTIONS, label: "Interactions" },
+    ];
+  }
+  return [];
+});
+
+const selectProvider = (provider: ProviderConfig["provider"]) => {
+  if (!formData.value) return;
+  formData.value.provider = provider;
+  formData.value.protocol =
+    provider === LLM_PROVIDERS.OPENAI
+      ? LLM_PROTOCOLS.OPENAI_RESPONSES
+      : provider === LLM_PROVIDERS.GEMINI
+        ? LLM_PROTOCOLS.GEMINI_GENERATE_CONTENT
+        : LLM_PROTOCOLS.ANTHROPIC;
+};
+
+const selectProtocol = (protocol: ProviderConfig["protocol"]) => {
+  if (!formData.value) return;
+  formData.value.protocol = protocol;
+};
+
 const isEditing = computed(() => {
   if (!props.provider || !formData.value) return false;
   return props.existingProviders.some((p) => p.id === props.provider?.id);
@@ -29,32 +69,6 @@ const modalTitle = computed(() => (isEditing.value ? "编辑配置" : "添加配
 const closeModal = () => {
   emit("update:modelValue", false);
   testResult.value = null;
-};
-
-const parseValue = (value: string): string | number | boolean => {
-  if (value === "true") return true;
-  if (value === "false") return false;
-  const num = Number(value);
-  if (value !== "" && !isNaN(num)) return num;
-  return value;
-};
-
-const buildCustomVarsObject = (vars: CustomVariable[]): Record<string, unknown> => {
-  const obj: Record<string, unknown> = {};
-  for (const v of vars) {
-    if (v.name.trim()) {
-      obj[v.name.trim()] = parseValue(v.value);
-    }
-  }
-  return obj;
-};
-
-const getTestResponseContent = (data: any): string => {
-  const content = data?.choices?.[0]?.message?.content;
-  if (typeof content !== "string" || !content.trim()) {
-    throw new Error("模型未返回有效内容");
-  }
-  return content;
 };
 
 const parseTestTranslationList = (content: string, expectedLength: number) => {
@@ -93,10 +107,9 @@ const testConfig = async () => {
   testResult.value = null;
 
   try {
-    const { baseUrl, apiKey, model, systemMessage, jsonSystemMessage, customVariables, batchTranslation, enableJsonSchema } = formData.value;
-    const customVars = buildCustomVarsObject(customVariables);
+    const { model, systemMessage, jsonSystemMessage, batchTranslation, enableJsonSchema } = formData.value;
     const testContents = ["Hello", "Good morning"];
-    const messages = batchTranslation
+    const messages: Array<{ role: "system" | "user"; content: string }> = batchTranslation
       ? [
           { role: "system", content: systemMessage },
           {
@@ -110,30 +123,14 @@ const testConfig = async () => {
           { role: "user", content: testContents[0] },
         ];
 
-    const response = await fetch(`${baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        ...customVars,
-        model,
-        messages,
-        ...(batchTranslation && enableJsonSchema ? { response_format: { type: "json_object" } } : {}),
-        stream: false,
-      }),
+    const response = await requestLLM(formData.value, {
+      model,
+      messages,
+      jsonMode: batchTranslation && enableJsonSchema,
+      jsonSchema: batchTranslation && enableJsonSchema ? TRANSLATION_JSON_SCHEMA : undefined,
     });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error?.message || `HTTP ${response.status}`);
-    }
-
-    const responseData = await response.json();
-    const content = getTestResponseContent(responseData);
     if (batchTranslation) {
-      parseTestTranslationList(content, testContents.length);
+      parseTestTranslationList(response.text, testContents.length);
     }
 
     testResult.value = { success: true, message: "连接成功！配置有效。" };
@@ -192,7 +189,42 @@ defineExpose({ onOpen });
           <input v-model="formData.name" type="text" placeholder="如: DeepSeek" />
         </div>
         <div class="form-group">
-          <label>API 地址</label>
+          <label>API 格式</label>
+          <p class="field-description">选择提供商类型</p>
+          <div class="protocol-selector" role="radiogroup" aria-label="API 协议">
+            <button
+              v-for="option in providerOptions"
+              :key="option.value"
+              type="button"
+              class="protocol-btn"
+              :class="{ active: formData.provider === option.value }"
+              :aria-checked="formData.provider === option.value"
+              role="radio"
+              @click="selectProvider(option.value)"
+            >
+              {{ option.label }}
+            </button>
+          </div>
+          <div v-if="protocolOptions.length > 0">
+            <p class="field-description">选择 API 格式</p>
+            <div class="protocol-selector" role="radiogroup" aria-label="API 格式">
+              <button
+                v-for="option in protocolOptions"
+                :key="option.value"
+                type="button"
+                class="protocol-btn"
+                :class="{ active: formData.protocol === option.value }"
+                :aria-checked="formData.protocol === option.value"
+                role="radio"
+                @click="selectProtocol(option.value)"
+              >
+                {{ option.label }}
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>API Base Url</label>
           <input v-model="formData.baseUrl" type="text" placeholder="https://api.deepseek.com/v1" />
         </div>
         <div class="form-group">
@@ -373,7 +405,7 @@ $danger: rgb(244, 33, 46);
     display: block;
     font-size: 14px;
     font-weight: 500;
-    color: $text-secondary;
+    color: $text-primary;
     margin-bottom: 6px;
   }
 
@@ -413,6 +445,50 @@ $danger: rgb(244, 33, 46);
       color: $text-secondary;
       cursor: default;
     }
+  }
+}
+
+.protocol-selector {
+  display: flex;
+  flex-wrap: wrap;
+  border-radius: 8px;
+  border: 1px solid $text-primary;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.protocol-btn {
+  position: relative;
+  flex: 1;
+  border: 0;
+  padding: 12px 0;
+  background: $bg-white;
+  color: $text-primary;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+
+  &:not(:last-child)::after {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 1px;
+    height: 100%;
+    background: rgb(15, 20, 25);
+    content: "";
+    pointer-events: none;
+  }
+
+  &:hover {
+    background: rgba(15, 20, 25, 0.08);
+  }
+
+  &.active {
+    background: $text-primary;
+    color: $bg-white;
   }
 }
 
