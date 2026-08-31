@@ -5,9 +5,9 @@ import {
   formatImageHtml,
   processImage,
   toCopyStageError,
-  translateTextContents,
+  type ProcessImageResult,
 } from '../../../shared/utils';
-import { extractTweetTextContent } from '../utils';
+import { extractTweetTextContent, getTweetTime, getTweetUserName } from '../utils';
 import { setVideoSize } from './videoHandler';
 
 const ORIG_IMAGE_PARAM = 'orig';
@@ -24,6 +24,7 @@ export interface TweetCopyOptions {
 export interface ArticleImageData {
   url: string;
   alt: string;
+  imageName: string;
 }
 
 export interface ArticleData {
@@ -33,7 +34,20 @@ export interface ArticleData {
   imageDataList: ArticleImageData[];
 }
 
-export type MediaProgressReporter = (text: string) => void;
+export interface MediaProgress {
+  current: number;
+  total: number;
+}
+
+export type MediaProgressReporter = (progress: MediaProgress) => void;
+
+export interface ProcessedArticleImageData extends ArticleImageData {
+  result?: ProcessImageResult;
+}
+
+export interface ProcessedArticleData extends Omit<ArticleData, 'imageDataList'> {
+  imageDataList: ProcessedArticleImageData[];
+}
 
 async function getAltText(presentation: Element): Promise<string> {
   try {
@@ -109,40 +123,26 @@ export async function collectArticleImageData(
   ).filter((item) => !item.querySelector('video'));
 
   const imageDataList: ArticleImageData[] = [];
+  const articleName = `${getTweetUserName(article)}_${formatDateForFilename(getTweetTime(article))}`;
   for (const presentation of presentations) {
     const image = presentation.querySelector<HTMLImageElement>('img');
     if (image) {
+      const imagePath =
+        new URL(image.src).pathname.split('/').pop() || `image_${imageDataList.length + 1}`;
       imageDataList.push({
         url: image.src,
         alt: includeAlt ? await getAltText(presentation) : '',
+        imageName: `${articleName}_${imagePath}.jpg`,
       });
     }
   }
   return imageDataList;
 }
 
-function escapeHtml(text: string): string {
-  return text.replace(
-    /[&<>"']/g,
-    (character) =>
-      ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;',
-      })[character] || character,
-  );
-}
-
 function getOriginalImageUrl(url: string): string {
   const parsedUrl = new URL(url);
   parsedUrl.searchParams.set('name', ORIG_IMAGE_PARAM);
   return parsedUrl.toString();
-}
-
-function getArticleName(articleData: ArticleData): string {
-  return `${articleData.userName}_${formatDateForFilename(new Date(articleData.time))}`;
 }
 
 function blobToDataUrl(blob: Blob): Promise<string> {
@@ -200,56 +200,35 @@ export async function captureArticleScreenshot(articleList: HTMLElement[]): Prom
 }
 
 export async function processArticleImages(
-  articleDataList: ArticleData[],
-  options: TweetCopyOptions,
+  imageDataList: ArticleImageData[],
+  download: boolean,
   reportProgress: MediaProgressReporter,
-): Promise<string[]> {
-  const imageEntries = articleDataList.flatMap((articleData) =>
-    articleData.imageDataList.map((imageData) => ({ articleData, imageData })),
-  );
-  let altTexts = imageEntries.map(({ imageData }) => imageData.alt);
-
-  if (options.getAlt && options.translate && altTexts.some((text) => text.trim())) {
-    reportProgress('正在翻译ALT');
-    try {
-      altTexts = await translateTextContents(altTexts, true);
-    } catch (error) {
-      throw toCopyStageError('alt', 'ALT 文本翻译失败', error);
-    }
-  }
-
-  const images: string[] = [];
-  for (let index = 0; index < imageEntries.length; index++) {
-    const { articleData, imageData } = imageEntries[index];
-    reportProgress(`正在获取图片（${index + 1}/${imageEntries.length}）`);
+): Promise<ProcessImageResult[]> {
+  const results: ProcessImageResult[] = [];
+  for (let index = 0; index < imageDataList.length; index++) {
+    const imageData = imageDataList[index];
+    reportProgress({ current: index + 1, total: imageDataList.length });
 
     try {
       const imageUrl = getOriginalImageUrl(imageData.url);
-      const imagePath = new URL(imageData.url).pathname.split('/').pop() || `image-${index + 1}`;
-      const result = await processImage(
-        { name: `${getArticleName(articleData)}_${imagePath}.jpg`, url: imageUrl },
-        options.download,
-      );
-      const alt = options.getAlt ? altTexts[index]?.trim() : '';
-      images.push(`${formatImageHtml(result)}${alt ? `\nALT: ${escapeHtml(alt)}` : ''}`);
+      const result = await processImage({ name: imageData.imageName, url: imageUrl }, download);
+      results[index] = result;
     } catch (error) {
       throw toCopyStageError('image', '图片获取失败', error);
     }
   }
-  return images;
+  return results;
 }
 
 export async function processScreenshot(
   screenshotBase64: string,
-  articleDataList: ArticleData[],
-  options: TweetCopyOptions,
+  screenshotName: string,
+  download: boolean,
 ): Promise<string> {
   if (!screenshotBase64) return '';
 
   try {
-    const firstArticle = articleDataList[0];
-    const name = firstArticle ? `${getArticleName(firstArticle)}.jpg` : 'tweet-screenshot.jpg';
-    const result = await processImage({ name, url: screenshotBase64 }, options.download);
+    const result = await processImage({ name: screenshotName, url: screenshotBase64 }, download);
     return formatImageHtml(result);
   } catch (error) {
     throw toCopyStageError('screenshot', '截图获取失败', error);
