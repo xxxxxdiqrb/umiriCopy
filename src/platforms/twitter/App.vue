@@ -9,8 +9,20 @@ import ConfigBar from '../../shared/components/ConfigBar.vue';
 import { appState, refreshProvidersFromStorage } from '../../shared/store';
 import { usePlatformCopy } from '../../shared/composables/usePlatformCopy';
 import { platformState, configItems, updateConfig, observer, loadPlatformConfig } from './platform';
-import { copyTweet, readTweetCopyOptions } from './composables/useCopyTweet';
+import { copyTweet } from './composables/useCopyTweet';
+import type { TweetCopyOptions } from './composables/tweetMedia';
 import { handleDownloadVideo } from './composables/videoHandler';
+
+function readTweetCopyOptions(): TweetCopyOptions {
+  return {
+    translate: platformState.configBar.translate,
+    captureScreenshot: platformState.configBar.captureScreenshot,
+    copyImages: platformState.configBar.copyImages,
+    getAlt: platformState.configBar.getAlt,
+    download: platformState.configBar.download,
+    suffix: appState.options.suffix,
+  };
+}
 
 const { handleCancel, handleSubmit, handleUpdateItem } = usePlatformCopy({
   platformState,

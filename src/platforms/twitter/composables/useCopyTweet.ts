@@ -1,14 +1,12 @@
-import { appState } from '../../../shared/store';
 import {
   formatDateForFilename,
-  formatImageHtml,
+  composeCopyContent,
   type ProcessImageResult,
   sleep,
   toCopyStageError,
   translateTextContents,
   waitATick,
 } from '../../../shared/utils';
-import { platformState } from '../platform';
 import type { LoadingTextReporter } from '../../../shared/composables/usePlatformCopy';
 import { extractTweetTextContent, getTweetTime, getTweetUserName } from '../utils';
 import {
@@ -20,19 +18,6 @@ import {
   type ProcessedArticleData,
   type TweetCopyOptions,
 } from './tweetMedia';
-
-const TEXT_SEPARATOR = '\n---------------\n';
-
-export function readTweetCopyOptions(): TweetCopyOptions {
-  return {
-    translate: platformState.configBar.translate,
-    captureScreenshot: platformState.configBar.captureScreenshot,
-    copyImages: platformState.configBar.copyImages,
-    getAlt: platformState.configBar.getAlt,
-    download: platformState.configBar.download,
-    suffix: appState.options.suffix,
-  };
-}
 
 export async function collectArticleData(
   article: HTMLElement,
@@ -67,44 +52,6 @@ export async function collectArticlesData(
     articleDataList.push(await collectArticleData(article, options));
   }
   return articleDataList;
-}
-
-function escapeHtml(text: string): string {
-  return text.replace(
-    /[&<>"']/g,
-    (character) =>
-      ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;',
-      })[character] || character,
-  );
-}
-
-export function composeTweetCopyContent(
-  articleDataList: ProcessedArticleData[],
-  screenshot: string,
-  suffix: string,
-): string {
-  const text = articleDataList
-    .map(({ userName, time, textContent }) => {
-      const header = `${userName} · ${new Date(time).toLocaleString()}`;
-      return `${header}${textContent ? '\n' : ''}${textContent}`;
-    })
-    .join(TEXT_SEPARATOR);
-  const textWithSuffix = text && suffix.trim() ? `${text}\n${suffix.trim()}` : text;
-  const imageBlocks = articleDataList.flatMap(({ imageDataList }) =>
-    imageDataList.flatMap(({ result, alt }) => {
-      if (!result) return [];
-      const imageHtml = formatImageHtml(result);
-      const trimmedAlt = alt.trim();
-      return trimmedAlt ? `${imageHtml}\nALT: ${escapeHtml(trimmedAlt)}` : imageHtml;
-    }),
-  );
-
-  return [textWithSuffix, screenshot, ...imageBlocks].filter(Boolean).join('\n');
 }
 
 export async function copyTweet(
@@ -195,5 +142,5 @@ export async function copyTweet(
     ? await processScreenshot(screenshotBase64, screenshotName, options.download)
     : '';
 
-  return composeTweetCopyContent(processedArticleDataList, screenshot, options.suffix);
+  return composeCopyContent(processedArticleDataList, screenshot, options.suffix);
 }

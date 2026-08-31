@@ -290,6 +290,58 @@ export function formatImageHtml(result: ProcessImageResult): string {
   return `<img src="${result.displaySrc}"/>`;
 }
 
+export interface CopyContentImage {
+  result?: ProcessImageResult;
+  alt: string;
+}
+
+export interface CopyContentArticle {
+  userName: string;
+  time: string;
+  textContent: string;
+  imageDataList: CopyContentImage[];
+}
+
+function escapeHtml(text: string): string {
+  return text.replace(
+    /[&<>"']/g,
+    (character) =>
+      ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+      })[character] || character,
+  );
+}
+
+/** Compose article text, an optional screenshot, and processed images for clipboard output. */
+export function composeCopyContent(
+  articleDataList: CopyContentArticle[],
+  screenshot: string,
+  suffix: string,
+  altPrefix = 'ALT: ',
+): string {
+  const text = articleDataList
+    .map(({ userName, time, textContent }) => {
+      const header = `${userName} · ${new Date(time).toLocaleString()}`;
+      return `${header}${textContent ? '\n' : ''}${textContent}`;
+    })
+    .join('\n---------------\n');
+  const textWithSuffix = text && suffix.trim() ? `${text}\n${suffix.trim()}` : text;
+  const imageBlocks = articleDataList.flatMap(({ imageDataList }) =>
+    imageDataList.flatMap(({ result, alt }) => {
+      if (!result) return [];
+      const imageHtml = formatImageHtml(result);
+      const trimmedAlt = alt.trim();
+      return trimmedAlt ? `${imageHtml}\n${altPrefix}${escapeHtml(trimmedAlt)}` : imageHtml;
+    }),
+  );
+
+  return [textWithSuffix, screenshot, ...imageBlocks].filter(Boolean).join('\n');
+}
+
 export interface DownloadVideoOptions {
   withCredentials?: boolean;
 }
