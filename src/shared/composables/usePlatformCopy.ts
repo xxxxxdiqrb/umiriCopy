@@ -2,12 +2,17 @@
 import type { PlatformState } from './createPlatformStore';
 import { CopyStageError } from '../utils';
 
+export type LoadingTextReporter = (text: string) => void;
+
 export interface UsePlatformCopyOptions {
   platformState: PlatformState;
   updateConfig: (key: string, value: boolean | string) => void;
   getSelectedArticleElements: () => HTMLElement[];
   unmountAllSelectors: () => Promise<void>;
-  copyArticles: (articles: HTMLElement[]) => Promise<string>;
+  copyArticles: (
+    articles: HTMLElement[],
+    reportLoadingText: LoadingTextReporter,
+  ) => Promise<string>;
   validateBeforeSubmit?: () => string | null;
 }
 
@@ -61,7 +66,9 @@ export function usePlatformCopy(options: UsePlatformCopyOptions) {
     appState.loading.text = '正在复制';
 
     try {
-      const copyString = await copyArticles(articles);
+      const copyString = await copyArticles(articles, (text) => {
+        appState.loading.text = text;
+      });
       appState.previewDialog.content = copyString;
       appState.previewDialog.visible = true;
       retryArticles = null;

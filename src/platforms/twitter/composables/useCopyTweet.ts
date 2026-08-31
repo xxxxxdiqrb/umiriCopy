@@ -1,63 +1,199 @@
 import { appState } from '../../../shared/store';
-import { platformState } from '../platform';
 import {
-  translateTextItems,
-  waitATick,
-  type TranslationTextItem,
+  formatDateForFilename,
+  formatImageHtml,
+  type ProcessImageResult,
+  sleep,
   toCopyStageError,
+  translateTextContents,
+  waitATick,
 } from '../../../shared/utils';
-import { captureScreenshots, extractAllTweetImages } from './tweetMedia';
-import { setVideoSize } from './videoHandler';
-import { extractTweetTextContent, getTweetName, getTweetTime, getTweetUserName } from '../utils';
+import { platformState } from '../platform';
+import type { LoadingTextReporter } from '../../../shared/composables/usePlatformCopy';
+import { extractTweetTextContent, getTweetTime, getTweetUserName } from '../utils';
+import {
+  captureArticleScreenshot,
+  collectArticleImageData,
+  processArticleImages,
+  processScreenshot,
+  type ArticleData,
+  type ProcessedArticleData,
+  type TweetCopyOptions,
+} from './tweetMedia';
 
 const TEXT_SEPARATOR = '\n---------------\n';
 
-async function extractTweetTexts(articleList: HTMLElement[]): Promise<string> {
-  const textContents: TranslationTextItem[] = [];
-  for (const article of articleList) {
-    const textDiv = article.querySelector('div[data-testid="tweetText"]') as HTMLElement | null;
-    let content = '';
-    if (textDiv && !article.querySelector('div[aria-labelledby')?.contains(textDiv)) {
-      content = extractTweetTextContent(textDiv);
-    }
-    const userName = getTweetUserName(article);
-    const time = getTweetTime(article);
-    textContents.push({ header: `${userName} · ${time.toLocaleString()}`, content: content });
-  }
-  if (platformState.configBar.translate) appState.loading.text = '正在翻译文本';
-  try {
-    return await translateTextItems(
-      textContents,
-      platformState.configBar.translate,
-      TEXT_SEPARATOR,
-    );
-  } catch (error) {
-    throw toCopyStageError('translation', '文本翻译失败', error);
-  }
+export function readTweetCopyOptions(): TweetCopyOptions {
+  return {
+    translate: platformState.configBar.translate,
+    captureScreenshot: platformState.configBar.captureScreenshot,
+    copyImages: platformState.configBar.copyImages,
+    getAlt: platformState.configBar.getAlt,
+    download: platformState.configBar.download,
+    suffix: appState.options.suffix,
+  };
 }
 
-export async function copyTweet(articleList: HTMLElement[]): Promise<string> {
-  const { removeOverlay } = await setVideoSize(articleList);
-  try {
-    const copyContentList: string[] = [];
-    for (const article of articleList)
-      article
-        .querySelector<HTMLElement>('button[data-testid="tweet-text-show-more-link"]')
-        ?.click();
-    await waitATick();
-    let text: string;
-    try {
-      text = await extractTweetTexts(articleList);
-    } catch (error) {
-      throw toCopyStageError('text', '推文文本获取失败', error);
-    }
-    if (text) copyContentList.push(text);
-    if (platformState.configBar.captureScreenshot)
-      copyContentList.push(await captureScreenshots(articleList, getTweetName(articleList[0])));
-    if (platformState.configBar.copyImages)
-      copyContentList.push(...(await extractAllTweetImages(articleList)));
-    return copyContentList.join('\n');
-  } finally {
-    await removeOverlay();
+export async function collectArticleData(
+  article: HTMLElement,
+  options: TweetCopyOptions,
+): Promise<ArticleData> {
+  article.querySelector<HTMLElement>('button[data-testid="tweet-text-show-more-link"]')?.click();
+  await waitATick();
+
+  const textElement = article.querySelector<HTMLElement>('div[data-testid="tweetText"]');
+  const quotedTweetContainer = article.querySelector('div[aria-labelledby]');
+  const textContent =
+    textElement && !quotedTweetContainer?.contains(textElement)
+      ? extractTweetTextContent(textElement)
+      : '';
+
+  return {
+    userName: getTweetUserName(article),
+    time: getTweetTime(article).toISOString(),
+    textContent,
+    imageDataList: options.copyImages ? await collectArticleImageData(article, options.getAlt) : [],
+  };
+}
+
+export async function collectArticlesData(
+  articleList: HTMLElement[],
+  options: TweetCopyOptions,
+): Promise<ArticleData[]> {
+  const articleDataList: ArticleData[] = [];
+  for (const article of articleList) {
+    article.scrollIntoView({ behavior: 'instant', block: 'center' });
+    await sleep(200);
+    articleDataList.push(await collectArticleData(article, options));
   }
+  return articleDataList;
+}
+
+function escapeHtml(text: string): string {
+  return text.replace(
+    /[&<>"']/g,
+    (character) =>
+      ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+      })[character] || character,
+  );
+}
+
+export function composeTweetCopyContent(
+  articleDataList: ProcessedArticleData[],
+  screenshot: string,
+  suffix: string,
+): string {
+  const text = articleDataList
+    .map(({ userName, time, textContent }) => {
+      const header = `${userName} · ${new Date(time).toLocaleString()}`;
+      return `${header}${textContent ? '\n' : ''}${textContent}`;
+    })
+    .join(TEXT_SEPARATOR);
+  const textWithSuffix = text && suffix.trim() ? `${text}\n${suffix.trim()}` : text;
+  const imageBlocks = articleDataList.flatMap(({ imageDataList }) =>
+    imageDataList.flatMap(({ result, alt }) => {
+      if (!result) return [];
+      const imageHtml = formatImageHtml(result);
+      const trimmedAlt = alt.trim();
+      return trimmedAlt ? `${imageHtml}\nALT: ${escapeHtml(trimmedAlt)}` : imageHtml;
+    }),
+  );
+
+  return [textWithSuffix, screenshot, ...imageBlocks].filter(Boolean).join('\n');
+}
+
+export async function copyTweet(
+  articleList: HTMLElement[],
+  options: TweetCopyOptions,
+  reportLoadingText: LoadingTextReporter,
+): Promise<string> {
+  reportLoadingText('正在读取推文内容');
+
+  let articleDataList: ArticleData[];
+  try {
+    articleDataList = await collectArticlesData(articleList, options);
+  } catch (error) {
+    throw toCopyStageError('text', '推文文本获取失败', error);
+  }
+
+  let screenshotBase64 = '';
+  if (options.captureScreenshot) {
+    reportLoadingText('正在获取截图');
+    try {
+      screenshotBase64 = await captureArticleScreenshot(articleList);
+    } catch (error) {
+      throw toCopyStageError('screenshot', '截图获取失败', error);
+    }
+  }
+
+  const textContentList = articleDataList.map(({ textContent }) => textContent);
+  const imageDataList = articleDataList.flatMap(({ imageDataList }) => imageDataList);
+  const altTextList = options.getAlt
+    ? imageDataList.filter(({ alt }) => alt.trim()).map(({ alt }) => alt)
+    : [];
+
+  let translatedTextContentList: string[] = [];
+  let translatedAltTextList: string[] = [];
+
+  if (options.translate) {
+    try {
+      reportLoadingText('正在翻译文本');
+      translatedTextContentList = await translateTextContents(textContentList, options.translate);
+      reportLoadingText('正在翻译ALT');
+      translatedAltTextList = await translateTextContents(altTextList, options.translate);
+    } catch (error) {
+      throw toCopyStageError('translation', '文本翻译失败', error);
+    }
+  }
+
+  let processedImageResultList: ProcessImageResult[] = [];
+  if (options.copyImages) {
+    processedImageResultList = await processArticleImages(
+      imageDataList,
+      options.download,
+      ({ current, total }) => {
+        reportLoadingText(`正在获取图片（${current}/${total}）`);
+      },
+    );
+  }
+
+  const processedAltTextList: string[] = [];
+  let translatedAltIndex = 0;
+  for (const imageData of imageDataList) {
+    processedAltTextList.push(
+      imageData.alt.trim()
+        ? (translatedAltTextList[translatedAltIndex++] ?? imageData.alt)
+        : imageData.alt,
+    );
+  }
+  let flatImageIndex = 0;
+  const processedArticleDataList: ProcessedArticleData[] = articleDataList.map(
+    (articleData, articleIndex) => ({
+      ...articleData,
+      textContent: translatedTextContentList[articleIndex] ?? articleData.textContent,
+      imageDataList: articleData.imageDataList.map((imageData) => {
+        const currentImageIndex = flatImageIndex++;
+        return {
+          ...imageData,
+          alt: processedAltTextList[currentImageIndex] ?? imageData.alt,
+          result: processedImageResultList[currentImageIndex],
+        };
+      }),
+    }),
+  );
+
+  const firstArticle = articleDataList[0];
+  const screenshotName = firstArticle
+    ? `${firstArticle.userName}_${formatDateForFilename(new Date(firstArticle.time))}_tweetScreenshot.jpg`
+    : 'tweetScreenshot.jpg';
+  const screenshot = options.captureScreenshot
+    ? await processScreenshot(screenshotBase64, screenshotName, options.download)
+    : '';
+
+  return composeTweetCopyContent(processedArticleDataList, screenshot, options.suffix);
 }

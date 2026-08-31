@@ -9,7 +9,7 @@ import ConfigBar from '../../shared/components/ConfigBar.vue';
 import { appState, refreshProvidersFromStorage } from '../../shared/store';
 import { usePlatformCopy } from '../../shared/composables/usePlatformCopy';
 import { platformState, configItems, updateConfig, observer, loadPlatformConfig } from './platform';
-import { copyTweet } from './composables/useCopyTweet';
+import { copyTweet, readTweetCopyOptions } from './composables/useCopyTweet';
 import { handleDownloadVideo } from './composables/videoHandler';
 
 const { handleCancel, handleSubmit, handleUpdateItem } = usePlatformCopy({
@@ -17,7 +17,8 @@ const { handleCancel, handleSubmit, handleUpdateItem } = usePlatformCopy({
   updateConfig,
   getSelectedArticleElements: observer.getSelectedArticleElements,
   unmountAllSelectors: observer.unmountAllSelectors,
-  copyArticles: copyTweet,
+  copyArticles: (articles, reportLoadingText) =>
+    copyTweet(articles, readTweetCopyOptions(), reportLoadingText),
   validateBeforeSubmit: () => {
     if (platformState.configBar.translate) {
       const selectedProvider = appState.providers.find(
