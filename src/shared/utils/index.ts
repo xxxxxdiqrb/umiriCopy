@@ -153,11 +153,14 @@ export async function translateTextContents(
     }
   }
 
-  const data = await requestChatCompletion([
-    { role: 'system', content: options.systemMessage },
-    { role: 'system', content: options.jsonSystemMessage },
-    { role: 'user', content: JSON.stringify(contents) },
-  ], options);
+  const data = await requestChatCompletion(
+    [
+      { role: 'system', content: options.systemMessage },
+      { role: 'system', content: options.jsonSystemMessage },
+      { role: 'user', content: JSON.stringify(contents) },
+    ],
+    options,
+  );
   try {
     return parseTranslationList(getResponseContent(data), contents.length);
   } catch (err) {
@@ -165,12 +168,18 @@ export async function translateTextContents(
   }
 }
 
-export async function getOpenAITranslation(text: string, options: TranslationOptions): Promise<string> {
+export async function getOpenAITranslation(
+  text: string,
+  options: TranslationOptions,
+): Promise<string> {
   if (!text || !text.trim()) return text;
-  const data = await requestChatCompletion([
-    { role: 'system', content: options.systemMessage },
-    { role: 'user', content: text },
-  ], options);
+  const data = await requestChatCompletion(
+    [
+      { role: 'system', content: options.systemMessage },
+      { role: 'user', content: text },
+    ],
+    options,
+  );
   return getResponseContent(data);
 }
 
@@ -239,7 +248,17 @@ export function sendChromeMessage<T = any>(
 }
 
 export function formatDateForFilename(date: Date): string {
-  return date.toLocaleString().split('/').join('-').split(':').join('');
+  const pad = (num: number) => String(num).padStart(2, '0');
+
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+  const seconds = pad(date.getSeconds());
+
+  return `${year}${month}${day}_${hours}${minutes}${seconds}`;
+  // return date.toLocaleString().split('/').join('-').split(':').join('');
 }
 
 export async function getBase64Image(url: string): Promise<string> {
