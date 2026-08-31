@@ -10,6 +10,7 @@ import { appState, refreshProvidersFromStorage } from '../../shared/store';
 import { usePlatformCopy } from '../../shared/composables/usePlatformCopy';
 import { platformState, configItems, updateConfig, observer, loadPlatformConfig } from './platform';
 import { copyTweet } from './composables/useCopyTweet';
+import type { TranslationOptions } from '../../shared/utils';
 import type { TweetCopyOptions } from './composables/tweetMedia';
 import { handleDownloadVideo } from './composables/videoHandler';
 
@@ -24,13 +25,23 @@ function readTweetCopyOptions(): TweetCopyOptions {
   };
 }
 
+function readTranslationOptions(): TranslationOptions {
+  return {
+    ...appState.options,
+    customVariables: Object.entries(appState.options.otherParam).map(([name, value]) => ({
+      name,
+      value: String(value),
+    })),
+  };
+}
+
 const { handleCancel, handleSubmit, handleUpdateItem } = usePlatformCopy({
   platformState,
   updateConfig,
   getSelectedArticleElements: observer.getSelectedArticleElements,
   unmountAllSelectors: observer.unmountAllSelectors,
   copyArticles: (articles, reportLoadingText) =>
-    copyTweet(articles, readTweetCopyOptions(), reportLoadingText),
+    copyTweet(articles, readTweetCopyOptions(), readTranslationOptions(), reportLoadingText),
   validateBeforeSubmit: () => {
     if (platformState.configBar.translate) {
       const selectedProvider = appState.providers.find(

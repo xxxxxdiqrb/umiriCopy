@@ -7,17 +7,28 @@ import Toast from '../../shared/components/Toast.vue';
 import FloatingCopyButton from '../../shared/components/FloatingCopyButton.vue';
 import ConfigBar from '../../shared/components/ConfigBar.vue';
 import { appState, refreshProvidersFromStorage } from '../../shared/store';
+import type { TranslationOptions } from '../../shared/utils';
 import { usePlatformCopy } from '../../shared/composables/usePlatformCopy';
 import { platformState, configItems, updateConfig, observer, loadPlatformConfig } from './platform';
 import { copyInstagram } from './composables/useCopyInstagram';
 import { handleDownloadVideo } from './composables/videoHandler';
+
+function readTranslationOptions(): TranslationOptions {
+  return {
+    ...appState.options,
+    customVariables: Object.entries(appState.options.otherParam).map(([name, value]) => ({
+      name,
+      value: String(value),
+    })),
+  };
+}
 
 const { handleCancel, handleSubmit, handleUpdateItem } = usePlatformCopy({
   platformState,
   updateConfig,
   getSelectedArticleElements: observer.getSelectedArticleElements,
   unmountAllSelectors: observer.unmountAllSelectors,
-  copyArticles: copyInstagram,
+  copyArticles: (articles) => copyInstagram(articles, readTranslationOptions()),
 });
 
 const handleFloatingButtonClick = async () => {

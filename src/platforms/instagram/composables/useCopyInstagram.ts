@@ -6,6 +6,7 @@ import {
   processImage,
   formatImageHtml,
   translateTextItems,
+  type TranslationOptions,
   type TranslationTextItem,
 } from '../../../shared/utils';
 
@@ -129,7 +130,10 @@ function getInstagramName(article: HTMLElement): string {
   return `instagram_${timeStr}`;
 }
 
-export async function copyInstagram(articleList: HTMLElement[]): Promise<string> {
+export async function copyInstagram(
+  articleList: HTMLElement[],
+  translationOptions: TranslationOptions,
+): Promise<string> {
   appState.loading.text = '正在复制 Instagram 内容';
 
   const firstArticle = articleList[0];
@@ -143,10 +147,17 @@ export async function copyInstagram(articleList: HTMLElement[]): Promise<string>
   if (textItem) {
     if (platformState.configBar.translate) {
       appState.loading.text = '正在翻译文本';
+      copyContentList.push(
+        await translateTextItems(
+          [textItem],
+          translationOptions,
+          '',
+          translationOptions.suffix ?? '',
+        ),
+      );
+    } else {
+      copyContentList.push(`${textItem.header}${textItem.content}`);
     }
-    copyContentList.push(
-      await translateTextItems([textItem], platformState.configBar.translate, ''),
-    );
   }
 
   if (platformState.configBar.copyImages) {

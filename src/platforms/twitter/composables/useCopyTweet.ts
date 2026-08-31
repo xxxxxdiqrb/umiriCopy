@@ -5,6 +5,7 @@ import {
   sleep,
   toCopyStageError,
   translateTextContents,
+  type TranslationOptions,
   waitATick,
 } from '../../../shared/utils';
 import type { LoadingTextReporter } from '../../../shared/composables/usePlatformCopy';
@@ -57,6 +58,7 @@ export async function collectArticlesData(
 export async function copyTweet(
   articleList: HTMLElement[],
   options: TweetCopyOptions,
+  translationOptions: TranslationOptions,
   reportLoadingText: LoadingTextReporter,
 ): Promise<string> {
   reportLoadingText('正在读取推文内容');
@@ -90,9 +92,9 @@ export async function copyTweet(
   if (options.translate) {
     try {
       reportLoadingText('正在翻译文本');
-      translatedTextContentList = await translateTextContents(textContentList, options.translate);
+      translatedTextContentList = await translateTextContents(textContentList, translationOptions);
       reportLoadingText('正在翻译ALT');
-      translatedAltTextList = await translateTextContents(altTextList, options.translate);
+      translatedAltTextList = await translateTextContents(altTextList, translationOptions);
     } catch (error) {
       throw toCopyStageError('translation', '文本翻译失败', error);
     }
