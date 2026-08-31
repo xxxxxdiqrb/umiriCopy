@@ -1,6 +1,14 @@
 node_modules/
 dist/
 *.local
+.env
+.env.*
+!.env.example
+test/fixtures/**
+!test/fixtures/
+!test/fixtures/twitter/
+!test/fixtures/twitter/.gitkeep
+!test/fixtures/twitter/cases.json
 .opencode/
 .DS_Store
 devDocs/

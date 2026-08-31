@@ -47,6 +47,7 @@ export interface AppState {
     batchTranslation: boolean;
     enableJsonSchema: boolean;
     otherParam: Record<string, unknown>;
+    developerMode: boolean;
   };
   providers: ProviderConfig[];
   defaultProviderId: string | null;
@@ -83,6 +84,7 @@ export const appState = reactive<AppState>({
     batchTranslation: true,
     enableJsonSchema: true,
     otherParam: {},
+    developerMode: false,
   },
   providers: [],
   defaultProviderId: null,
@@ -199,4 +201,5 @@ export async function refreshProvidersFromStorage() {
     appState.providers = [];
     appState.defaultProviderId = null;
   }
+  appState.options.developerMode = stored?.developerMode === true;
 }

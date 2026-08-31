@@ -56,6 +56,7 @@ export interface PlatformConfigs {
 export interface OptionsData {
   providers: ProviderConfig[];
   defaultProviderId: string | null;
+  developerMode: boolean;
   platformConfigs?: PlatformConfigs;
 }
 
@@ -182,9 +183,10 @@ export function normalizePlatformSettings(
 
 export function sanitizeOptionsData(raw: unknown): OptionsData {
   if (!raw || typeof raw !== 'object') {
-    return {
-      providers: [],
-      defaultProviderId: null,
+  return {
+    providers: [],
+    defaultProviderId: null,
+      developerMode: false,
       platformConfigs: { ...DEFAULT_PLATFORM_CONFIGS },
     };
   }
@@ -224,6 +226,7 @@ export function sanitizeOptionsData(raw: unknown): OptionsData {
   return {
     providers,
     defaultProviderId,
+    developerMode: rawData.developerMode === true,
     platformConfigs,
   };
 }

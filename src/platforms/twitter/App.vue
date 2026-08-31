@@ -13,6 +13,7 @@ import { copyTweet } from './composables/useCopyTweet';
 import type { TranslationOptions } from '../../shared/utils';
 import type { TweetCopyOptions } from './composables/tweetMedia';
 import { handleDownloadVideo } from './composables/videoHandler';
+import { collectArticleData } from './composables/useCopyTweet';
 
 function readTweetCopyOptions(): TweetCopyOptions {
   return {
@@ -74,6 +75,26 @@ const showDownloadVideo = computed(() => {
   const isNotQuoted = mediaContainer?.querySelector('time') == null;
   return hasVideo && isNotQuoted;
 });
+
+const collectSelectedArticleData = async () => {
+  const articles = observer.getSelectedArticleElements();
+  if (articles.length === 0) {
+    console.warn('[tweetCopy] 请先选择一条推文');
+    return;
+  }
+  for (const article of articles) {
+    try {
+      const articleData = await collectArticleData(article, {
+        ...readTweetCopyOptions(),
+        copyImages: true,
+        getAlt: false,
+      });
+      console.log('[tweetCopy] articleData', articleData);
+    } catch (error) {
+      console.error('[tweetCopy] 获取 articleData 失败', error);
+    }
+  }
+};
 </script>
 
 <template>
@@ -88,10 +109,12 @@ const showDownloadVideo = computed(() => {
     submit-label="复制"
     selected-count-label="已选中推文"
     :show-download-video="showDownloadVideo"
+    :show-developer-tools="appState.options.developerMode"
     @cancel="handleCancel"
     @submit="handleSubmit"
     @update:item="handleUpdateItem"
     @download-video="handleDownloadVideo"
+    @collect-article-data="collectSelectedArticleData"
   />
   <PreviewDialog />
 </template>

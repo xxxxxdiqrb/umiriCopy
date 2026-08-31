@@ -232,7 +232,7 @@ $accent: rgb(29, 155, 240);
   flex-shrink: 0;
 
   &.active {
-    background-color: $accent;
+    background-color: $text-primary;
   }
 }
 

@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "node scripts/build.ts --watch",
     "build": "node scripts/build.ts",
+    "capture:twitter": "node scripts/capture-twitter-articles.ts",
+    "test:twitter": "vitest run test/twitter/collectArticleData.test.ts",
     "preview": "vite preview",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
@@ -21,14 +23,18 @@
     "@types/node": "^20.12.0",
     "@types/twemoji": "^13.1.1",
     "@vitejs/plugin-vue": "^5.0.4",
+    "dotenv": "^17.4.2",
     "eslint": "^10.9.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-vue": "^10.10.0",
+    "jsdom": "^29.1.1",
+    "playwright": "^1.62.1",
     "prettier": "^3.9.6",
     "sass": "^1.75.0",
     "typescript": "^5.4.0",
     "typescript-eslint": "^8.68.0",
     "vite": "^5.2.0",
+    "vitest": "^4.1.11",
     "vue-tsc": "^2.0.0"
   }
 }

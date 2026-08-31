@@ -11,6 +11,7 @@ const activeTab = ref<'providers' | 'platforms'>('providers');
 const options = ref<OptionsData>({
   providers: [],
   defaultProviderId: null,
+  developerMode: false,
   platformConfigs: {
     twitter: { ...DEFAULT_PLATFORM_CONFIGS.twitter },
     instagram: { ...DEFAULT_PLATFORM_CONFIGS.instagram },
@@ -43,6 +44,11 @@ onMounted(async () => {
 });
 
 const saveOptions = async () => {
+  await chrome.storage.local.set({ options: options.value });
+};
+
+const toggleDeveloperMode = async () => {
+  options.value.developerMode = !options.value.developerMode;
   await chrome.storage.local.set({ options: options.value });
 };
 
@@ -161,6 +167,18 @@ const handleImportFile = async (event: Event) => {
     <div class="header">
       <span class="app-name">扩展配置管理</span>
       <div class="header-actions">
+        <label class="developer-option">
+          开发者选项
+          <button
+            type="button"
+            class="toggle-btn"
+            :class="{ active: options.developerMode }"
+            title="开启后configBar中会出现额外选项"
+            @click="toggleDeveloperMode"
+          >
+            <span class="toggle-indicator"></span>
+          </button>
+        </label>
         <input
           ref="fileInputRef"
           type="file"
@@ -393,6 +411,44 @@ $accent-hover: rgb(26, 140, 216);
   font-size: 22px;
   font-weight: 800;
   color: $text-primary;
+}
+
+.developer-option {
+  display: flex;
+  align-items: center;
+}
+
+.toggle-btn {
+  position: relative;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 12px;
+  background-color: #e9e9e9;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-left: 12px;
+
+  &.active {
+    background-color: $text-primary;
+  }
+}
+
+.toggle-indicator {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: white;
+  transition: transform 0.2s;
+
+  .toggle-btn.active & {
+    transform: translateX(20px);
+  }
 }
 
 .tabs {

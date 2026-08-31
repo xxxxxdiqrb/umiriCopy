@@ -9,6 +9,7 @@ const props = defineProps<{
   submitLabel: string;
   selectedCountLabel: string;
   showDownloadVideo?: boolean;
+  showDeveloperTools?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -16,6 +17,7 @@ const emit = defineEmits<{
   submit: [];
   'update:item': [key: string, value: boolean | string];
   downloadVideo: [];
+  collectArticleData: [];
 }>();
 
 const visibleItems = computed(() => {
@@ -71,6 +73,9 @@ const handleSelectChange = (item: ConfigItem, event: Event) => {
       <button class="submit-btn" @click="emit('submit')">{{ submitLabel }}</button>
       <button v-if="showDownloadVideo" class="download-btn" @click="emit('downloadVideo')">
         下载视频
+      </button>
+      <button v-if="showDeveloperTools" class="download-btn" @click="emit('collectArticleData')">
+        获取 articleData
       </button>
     </div>
   </div>
