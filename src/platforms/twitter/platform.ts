@@ -1,9 +1,21 @@
 ﻿import { appState } from '../../shared/store';
 import { createPlatformStore } from '../../shared/composables/createPlatformStore';
 import { createArticleSelectorObserver } from '../../shared/composables/createArticleSelectorObserver';
+import { DEFAULT_PLATFORM_CONFIGS } from '../../options/types';
 
-export const { platformState, configItems, updateConfig, loadPlatformConfig } =
-  createPlatformStore('twitter');
+export const { platformState, configItems, updateConfig, loadPlatformConfig } = createPlatformStore(
+  {
+    id: 'twitter',
+    defaults: DEFAULT_PLATFORM_CONFIGS.twitter,
+    capabilities: {
+      copy: true,
+      videoDownload: true,
+      screenshot: true,
+      imageAlt: true,
+      developerTools: true,
+    },
+  },
+);
 
 export const observer = createArticleSelectorObserver({
   prefix: 'tweet-copy',

@@ -1,7 +1,12 @@
 import { sleep, waitATick } from '../../../shared/utils';
 import type { ArticleData, CopyPipelineOptions } from '../../../shared/copy/types';
-import { extractTweetTextContent, getTweetTime, getTweetUserName, getTweetUserScreenName } from '../utils';
-import { collectArticleImageData } from './tweetImageCollector';
+import {
+  extractTweetTextContent,
+  getTweetTime,
+  getTweetUserName,
+  getTweetUserScreenName,
+} from '../utils';
+import { collectArticleImageData } from './imageCollector';
 
 export async function collectArticleData(
   article: HTMLElement,
@@ -11,14 +16,18 @@ export async function collectArticleData(
   await waitATick();
   const textElement = article.querySelector<HTMLElement>('div[data-testid="tweetText"]');
   const quotedTweetContainer = article.querySelector('div[aria-labelledby]');
-  const textContent = textElement && !quotedTweetContainer?.contains(textElement)
-    ? extractTweetTextContent(textElement) : '';
+  const textContent =
+    textElement && !quotedTweetContainer?.contains(textElement)
+      ? extractTweetTextContent(textElement)
+      : '';
   return {
     userName: getTweetUserName(article),
     userScreenName: getTweetUserScreenName(article),
     time: getTweetTime(article).toISOString(),
     textContent,
-    imageDataList: options.copyImages ? await collectArticleImageData(article, options.getAlt ?? false) : [],
+    imageDataList: options.copyImages
+      ? await collectArticleImageData(article, options.getAlt ?? false)
+      : [],
   };
 }
 

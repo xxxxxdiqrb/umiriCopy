@@ -1,50 +1,5 @@
-import { createApp } from 'vue';
+import { bootstrapPlatform } from '../../shared/platform/bootstrapPlatform';
 import App from './App.vue';
-import { appState, applyProvider } from '../../shared/store';
-import { createElement } from '../../shared/utils';
-import { normalizeProviderConfig, type ProviderConfig } from '../../options/types';
-import { platformState } from './platform';
+import { twitterDefinition } from './index';
 
-async function init() {
-  const stored = (await chrome.storage.local.get('options')).options;
-  if (stored?.providers) {
-    let providers: ProviderConfig[] = [];
-    if (Array.isArray(stored.providers)) {
-      providers = stored.providers.map((provider: Partial<ProviderConfig>) =>
-        normalizeProviderConfig(provider),
-      );
-    } else if (typeof stored.providers === 'object') {
-      providers = Object.values(stored.providers).map((provider) =>
-        normalizeProviderConfig(provider as Partial<ProviderConfig>),
-      );
-    }
-
-    if (providers.length > 0) {
-      const defaultId = stored.defaultProviderId;
-
-      appState.providers = providers;
-      appState.defaultProviderId = defaultId;
-      platformState.configBar.selectedProviderId = defaultId;
-
-      const provider = providers.find((p) => p.id === defaultId) || providers[0];
-      if (provider) {
-        applyProvider(provider);
-      }
-    }
-  }
-
-  const globalHost = createElement(`
-            <div id="tweet-copy-app" style="
-              z-index: 20000; 
-              position: fixed; 
-              top: 0; 
-              left: 0; 
-              width: 0px; 
-              height: 0px"
-            ></div>
-        `);
-  document.body.appendChild(globalHost);
-  createApp(App).mount(globalHost);
-}
-
-init();
+void bootstrapPlatform(App, twitterDefinition, 'tweet-copy-app');

@@ -1,8 +1,20 @@
 ﻿import { createPlatformStore } from '../../shared/composables/createPlatformStore';
 import { createArticleSelectorObserver } from '../../shared/composables/createArticleSelectorObserver';
+import { DEFAULT_PLATFORM_CONFIGS } from '../../options/types';
 
-export const { platformState, configItems, updateConfig, loadPlatformConfig } =
-  createPlatformStore('instagram');
+export const { platformState, configItems, updateConfig, loadPlatformConfig } = createPlatformStore(
+  {
+    id: 'instagram',
+    defaults: DEFAULT_PLATFORM_CONFIGS.instagram,
+    capabilities: {
+      copy: true,
+      videoDownload: true,
+      screenshot: false,
+      imageAlt: false,
+      developerTools: false,
+    },
+  },
+);
 
 export const observer = createArticleSelectorObserver({
   prefix: 'instagram-copy',

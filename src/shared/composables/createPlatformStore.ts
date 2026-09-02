@@ -2,6 +2,7 @@
 import { appState, applyProvider } from '../store';
 import { DEFAULT_PLATFORM_CONFIGS, type PlatformSettings } from '../../options/types';
 import type { ConfigItem } from '../types';
+import type { PlatformStoreOptions } from '../platform/types';
 
 export interface PlatformState {
   configBar: {
@@ -16,9 +17,9 @@ export interface PlatformState {
 }
 
 export async function getPlatformSettingsFromStorage(
-  platform: 'twitter' | 'instagram',
+  platform: string,
+  fallbackDefaults: PlatformSettings = DEFAULT_PLATFORM_CONFIGS.twitter,
 ): Promise<PlatformSettings> {
-  const fallbackDefaults = DEFAULT_PLATFORM_CONFIGS[platform];
   try {
     const stored = (await chrome.storage.local.get('options'))?.options;
     const platformConfig = stored?.platformConfigs?.[platform];
@@ -55,8 +56,8 @@ export async function getPlatformSettingsFromStorage(
   return { ...fallbackDefaults };
 }
 
-export function createPlatformStore(platform: 'twitter' | 'instagram') {
-  const fallback = DEFAULT_PLATFORM_CONFIGS[platform];
+export function createPlatformStore(options: PlatformStoreOptions) {
+  const { id: platform, defaults: fallback, capabilities, extraItems = [] } = options;
   const platformState = reactive<PlatformState>({
     configBar: {
       visible: false,
@@ -79,7 +80,7 @@ export function createPlatformStore(platform: 'twitter' | 'instagram') {
       platformState.configBar.download = false;
       platformState.configBar.getAlt = false;
     }
-    if (platform === 'twitter' && settings.captureScreenshot !== undefined) {
+    if (capabilities.screenshot && settings.captureScreenshot !== undefined) {
       platformState.configBar.captureScreenshot = settings.captureScreenshot;
     }
 
@@ -114,7 +115,7 @@ export function createPlatformStore(platform: 'twitter' | 'instagram') {
         value: p.id,
       })),
     },
-    ...(platform === 'twitter'
+    ...(capabilities.screenshot
       ? [
           {
             key: 'captureScreenshot',
@@ -130,7 +131,7 @@ export function createPlatformStore(platform: 'twitter' | 'instagram') {
       type: 'toggle',
       value: platformState.configBar.copyImages,
     },
-    ...(platform === 'twitter'
+    ...(capabilities.imageAlt
       ? [
           {
             key: 'getAlt',
@@ -148,6 +149,7 @@ export function createPlatformStore(platform: 'twitter' | 'instagram') {
       value: platformState.configBar.download,
       dependsOn: 'copyImages',
     },
+    ...extraItems,
   ]);
 
   function updateConfig(key: string, value: boolean | string) {

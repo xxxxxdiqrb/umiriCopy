@@ -1,14 +1,8 @@
-import { getTweetDetail, type TweetMedia } from './tweetService';
+import { collectTwitterVideos } from '../collectors/videoCollector';
 import { observer, platformState } from '../platform';
-import {
-  executeVideoDownload,
-  exitCopyState,
-  type VideoDownloadResource,
-} from '../../../shared/composables/useVideoDownload';
-import { formatDateForFilename } from '../../../shared/utils';
-
-const filenameFromUrl = (url: string) => url.split('?')[0].split('/').pop() || 'video.mp4';
-
+import { executeVideoDownload, exitCopyState } from '../../../shared/composables/useVideoDownload';
+/* collector moved to collectors/videoCollector.ts */
+/*
 export async function collectTwitterVideos(article: HTMLElement): Promise<VideoDownloadResource[]> {
   const link = article.querySelector<HTMLAnchorElement>('a[href*="/status/"]');
   const match = link?.href.match(/\/status\/(\d+)/);
@@ -28,6 +22,7 @@ export async function collectTwitterVideos(article: HTMLElement): Promise<VideoD
         : [],
     );
 }
+*/
 
 export async function handleDownloadVideo(): Promise<void> {
   await executeVideoDownload({
