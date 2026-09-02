@@ -2,11 +2,11 @@ import { createApp, type Component } from 'vue';
 import { appState, applyProvider } from '../store';
 import { createElement } from '../utils';
 import { normalizeProviderConfig, type ProviderConfig } from '../../options/types';
-import type { PlatformDefinition } from './types';
+import type { PlatformInstance } from './types';
 
 export async function bootstrapPlatform(
   app: Component,
-  definition: PlatformDefinition,
+  definition: PlatformInstance,
   mountId: string,
 ): Promise<void> {
   const stored = (await chrome.storage.local.get('options')).options;

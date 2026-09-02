@@ -1,5 +1,5 @@
 import { bootstrapPlatform } from '../../shared/platform/bootstrapPlatform';
 import App from './App.vue';
-import { twitterDefinition } from './index';
+import { twitterPlatform } from './platform';
 
-void bootstrapPlatform(App, twitterDefinition, 'tweet-copy-app');
+void bootstrapPlatform(App, twitterPlatform, 'tweet-copy-app');

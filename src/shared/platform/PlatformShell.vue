@@ -8,41 +8,26 @@ import FloatingCopyButton from '../components/FloatingCopyButton.vue';
 import ConfigBar from '../components/ConfigBar.vue';
 import { appState, refreshProvidersFromStorage } from '../store';
 import { usePlatformCopy } from '../composables/usePlatformCopy';
-import { executeCopyPipeline } from '../copy/pipeline';
-import type { PlatformDefinition } from './types';
+import type { PlatformInstance } from './types';
 import { executeVideoDownload } from '../composables/useVideoDownload';
 import { exitPlatformSession } from './platformSession';
 
-const props = defineProps<{ definition: PlatformDefinition; loadConfig: () => Promise<void> }>();
-const definition = props.definition;
+const props = defineProps<{ platform: PlatformInstance }>();
+const definition = props.platform;
 const configItems = computed(() => definition.configItems.value);
 const { handleCancel, handleSubmit, handleUpdateItem } = usePlatformCopy({
   platformState: definition.state,
-  updateConfig: definition.updateConfig,
+  updateConfig: definition.config.update,
   getSelectedArticleElements: definition.observer.getSelectedArticleElements,
   unmountAllSelectors: definition.observer.unmountAllSelectors,
-  copyArticles: (articles, reporter) => {
-    if (!definition.copy) return Promise.resolve('');
-    return executeCopyPipeline(
-      articles,
-      definition.copy.adapter,
-      definition.copy.getOptions(),
-      {
-        ...appState.options,
-        customVariables: Object.entries(appState.options.otherParam).map(([name, value]) => ({
-          name,
-          value: String(value),
-        })),
-      },
-      reporter,
-    );
-  },
+  copyArticles: (articles, reporter) =>
+    definition.copy?.execute(articles, reporter) ?? Promise.resolve(''),
   validateBeforeSubmit: () => definition.copy?.validate?.() ?? null,
 });
 
 const handleOpen = async () => {
   await refreshProvidersFromStorage();
-  await props.loadConfig();
+  await definition.config.load();
   definition.state.configBar.visible = true;
   appState.selectMode.active = true;
   definition.observer.mountSelectorsToAllArticles();
@@ -56,7 +41,10 @@ const showDownloadVideo = computed(
 const handleDownloadVideo = async () => {
   if (!definition.video) return;
   const articles = definition.observer.getSelectedArticleElements();
-  await executeVideoDownload({ collectVideos: () => definition.video!.collectVideos(articles), onSuccess: () => exitPlatformSession(definition.state, definition.observer) });
+  await executeVideoDownload({
+    collectVideos: () => definition.video!.collectVideos(articles),
+    onSuccess: () => exitPlatformSession(definition.state, definition.observer),
+  });
 };
 const collectArticleData = async () => {
   const collector = definition.developerTools?.collectArticleData;

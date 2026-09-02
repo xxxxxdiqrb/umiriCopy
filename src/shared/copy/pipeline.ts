@@ -53,11 +53,15 @@ export async function executeCopyPipeline(
 
   let processedImageResultList: ProcessImageResult[] = [];
   if (options.copyImages) {
-    try { processedImageResultList = await processArticleImages(
-      imageDataList,
-      options.download,
-      ({ current, total }) => reportLoadingText(`正在获取图片（${current}/${total}）`),
-    ); } catch (error) { throw toCopyStageError(CopyStage.Image, '图片获取失败', error); }
+    try {
+      processedImageResultList = await processArticleImages(
+        imageDataList,
+        options.download,
+        ({ current, total }) => reportLoadingText(`正在获取图片（${current}/${total}）`),
+      );
+    } catch (error) {
+      throw toCopyStageError(CopyStage.Image, '图片获取失败', error);
+    }
   }
   let translatedAltIndex = 0;
   let flatImageIndex = 0;
