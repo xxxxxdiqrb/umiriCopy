@@ -3,6 +3,7 @@ import type { ConfigItem } from '../types';
 import type { PlatformState } from '../composables/createPlatformStore';
 import type { PlatformAdapter, CopyPipelineOptions } from '../copy/types';
 import type { PlatformSettings } from '../../options/types';
+import type { VideoDownloadResource } from '../composables/useVideoDownload';
 
 export type PlatformObserver = ReturnType<
   typeof import('../composables/createArticleSelectorObserver').createArticleSelectorObserver
@@ -28,7 +29,7 @@ export interface PlatformDefinition {
     getOptions: () => CopyPipelineOptions;
     validate?: () => string | null;
   };
-  video?: { canDownload: (articles: HTMLElement[]) => boolean; download: () => Promise<void> };
+  video?: { canDownload: (articles: HTMLElement[]) => boolean; collectVideos: (articles: HTMLElement[]) => Promise<VideoDownloadResource[]> };
   developerTools?: { collectArticleData: (article: HTMLElement) => Promise<unknown> };
   ui: { floatingButtonLabel: string; submitLabel: string; selectedCountLabel: string };
 }

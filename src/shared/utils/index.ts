@@ -3,29 +3,8 @@ import { BATCH_TRANSLATION_SYSTEM_MESSAGE } from '../constants';
 import { requestLLM } from '../llm';
 import { TRANSLATION_JSON_SCHEMA } from '../llm/schemas';
 
-export type CopyStage = 'text' | 'alt' | 'translation' | 'screenshot' | 'image' | 'resource';
-
-export class CopyStageError extends Error {
-  public readonly cause?: unknown;
-
-  constructor(
-    public readonly stage: CopyStage,
-    message: string,
-    cause?: unknown,
-  ) {
-    super(message);
-    if (cause !== undefined) this.cause = cause;
-    this.name = 'CopyStageError';
-  }
-}
-
-export function toCopyStageError(
-  stage: CopyStage,
-  message: string,
-  error: unknown,
-): CopyStageError {
-  return error instanceof CopyStageError ? error : new CopyStageError(stage, message, error);
-}
+export { CopyStage, CopyStageError, toCopyStageError, withCopyStage } from '../copy/errors';
+export type { CopyStage as CopyStageType } from '../copy/errors';
 
 export interface TranslationTextItem {
   header: string;

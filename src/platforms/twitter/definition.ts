@@ -3,7 +3,7 @@ import type { CopyPipelineOptions } from '../../shared/copy/types';
 import type { PlatformDefinition } from '../../shared/platform/types';
 import { platformState, configItems, observer, updateConfig } from './platform';
 import { twitterAdapter } from './adapter';
-import { handleDownloadVideo } from './video/videoDownloadHandler';
+import { collectTwitterVideos } from './collectors/videoCollector';
 import { collectArticleData } from './collectors/articleCollector';
 
 const getOptions = (): CopyPipelineOptions => ({
@@ -31,7 +31,7 @@ export const twitterDefinition: PlatformDefinition = {
   copy: { adapter: twitterAdapter, getOptions },
   video: {
     canDownload: (articles) => articles.length === 1 && articles[0].querySelector('video') !== null,
-    download: handleDownloadVideo,
+    collectVideos: (articles) => collectTwitterVideos(articles[0]),
   },
   developerTools: {
     collectArticleData: (article) =>

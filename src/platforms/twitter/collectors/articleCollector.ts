@@ -20,14 +20,15 @@ export async function collectArticleData(
     textElement && !quotedTweetContainer?.contains(textElement)
       ? extractTweetTextContent(textElement)
       : '';
+  const imageDataList = options.copyImages
+    ? await collectArticleImageData(article, options.getAlt ?? false)
+    : [];
   return {
     userName: getTweetUserName(article),
     userScreenName: getTweetUserScreenName(article),
     time: getTweetTime(article).toISOString(),
     textContent,
-    imageDataList: options.copyImages
-      ? await collectArticleImageData(article, options.getAlt ?? false)
-      : [],
+    imageDataList,
   };
 }
 

@@ -44,13 +44,7 @@ export interface PlatformAdapter {
     articles: HTMLElement[],
     options: CopyPipelineOptions,
   ): Promise<ArticleData[]>;
-  processArticleImages?: (
-    images: ArticleImageData[],
-    download: boolean,
-    reportProgress: (progress: { current: number; total: number }) => void,
-  ) => Promise<ProcessImageResult[]>;
   captureScreenshot?: (articles: HTMLElement[]) => Promise<string>;
-  processScreenshot?: (base64: string, name: string, download: boolean) => Promise<string>;
 }
 
 export type { TranslationOptions };

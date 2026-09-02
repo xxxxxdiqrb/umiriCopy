@@ -78,12 +78,12 @@ export function usePlatformCopy(options: UsePlatformCopyOptions) {
       const stageName =
         e instanceof CopyStageError
           ? {
-              alt: 'ALT文本获取',
               translation: '翻译',
               screenshot: '截图',
               image: '图片下载',
-              text: '文本获取',
+              collect: '文本获取',
               resource: '资源获取',
+              compose: '内容组装',
             }[e.stage]
           : '资源获取';
       retryArticles = articles;

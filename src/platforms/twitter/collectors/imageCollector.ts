@@ -1,4 +1,4 @@
-import { CopyStageError, formatDateForFilename, toCopyStageError } from '../../../shared/utils';
+import { formatDateForFilename } from '../../../shared/utils';
 import type { ArticleImageData } from '../../../shared/copy/types';
 import { extractTweetTextContent, getTweetTime, getTweetUserScreenName } from '../utils';
 
@@ -36,9 +36,6 @@ async function getAltText(presentation: Element): Promise<string> {
     await waitForDialog(true);
     const text = document.querySelector('div[role="dialog"]')?.children?.[1];
     return text instanceof HTMLElement ? extractTweetTextContent(text) : '';
-  } catch (error) {
-    if (error instanceof CopyStageError) throw error;
-    throw toCopyStageError('alt', '获取图片 ALT 文本失败', error);
   } finally {
     if (document.querySelector('div[data-testid="hoverCardParent"]'))
       await toggleAltDialog().catch(() => undefined);
@@ -53,18 +50,44 @@ export async function collectArticleImageData(
     HTMLElement | undefined;
   if (!media || media.querySelector('time')) return [];
   const articleName = `${getTweetUserScreenName(article)}_${formatDateForFilename(getTweetTime(article))}`;
-  const result: ArticleImageData[] = [];
-  for (const presentation of Array.from(media.querySelectorAll('div[role="presentation"]')).filter(
+  const presentations = Array.from(media.querySelectorAll('div[role="presentation"]')).filter(
     (item) => !item.querySelector('video'),
-  )) {
+  );
+  const sources: Array<{ presentation: Element; url: string; imageName: string }> = [];
+
+  // Collect URL and filename independently from ALT extraction.
+  for (let index = 0; index < presentations.length; index++) {
+    const presentation = presentations[index];
     const image = presentation.querySelector<HTMLImageElement>('img');
     if (!image) continue;
-    const path = new URL(image.src).pathname.split('/').pop() || `image_${result.length + 1}`;
-    result.push({
-      url: image.src,
-      alt: includeAlt ? await getAltText(presentation) : '',
-      imageName: `${articleName}_${path}.jpg`,
-    });
+    let url: string;
+    try {
+      url = image.src;
+      if (!url) throw new Error('图片 URL 为空');
+    } catch (error) {
+      throw new Error(`图片 URL 获取失败: ${String(error)}`);
+    }
+    let imageName: string;
+    try {
+      const path = new URL(url).pathname.split('/').pop() || `image_${index + 1}`;
+      imageName = `${articleName}_${path}.jpg`;
+    } catch (error) {
+      throw new Error(`图片文件名生成失败: ${String(error)}`);
+    }
+    sources.push({ presentation, url, imageName });
+  }
+
+  const result: ArticleImageData[] = [];
+  for (const source of sources) {
+    let alt = '';
+    if (includeAlt) {
+      try {
+        alt = await getAltText(source.presentation);
+      } catch (error) {
+        throw new Error(`ALT文本获取失败: ${String(error)}`);
+      }
+    }
+    result.push({ url: source.url, imageName: source.imageName, alt });
   }
   return result;
 }

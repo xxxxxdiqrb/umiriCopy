@@ -10,6 +10,8 @@ import { appState, refreshProvidersFromStorage } from '../store';
 import { usePlatformCopy } from '../composables/usePlatformCopy';
 import { executeCopyPipeline } from '../copy/pipeline';
 import type { PlatformDefinition } from './types';
+import { executeVideoDownload } from '../composables/useVideoDownload';
+import { exitPlatformSession } from './platformSession';
 
 const props = defineProps<{ definition: PlatformDefinition; loadConfig: () => Promise<void> }>();
 const definition = props.definition;
@@ -51,6 +53,11 @@ const showDownloadVideo = computed(
     definition.capabilities.videoDownload &&
     !!definition.video?.canDownload(definition.observer.getSelectedArticleElements()),
 );
+const handleDownloadVideo = async () => {
+  if (!definition.video) return;
+  const articles = definition.observer.getSelectedArticleElements();
+  await executeVideoDownload({ collectVideos: () => definition.video!.collectVideos(articles), onSuccess: () => exitPlatformSession(definition.state, definition.observer) });
+};
 const collectArticleData = async () => {
   const collector = definition.developerTools?.collectArticleData;
   if (!collector) return;
@@ -80,7 +87,7 @@ const collectArticleData = async () => {
     @cancel="handleCancel"
     @submit="handleSubmit"
     @update:item="handleUpdateItem"
-    @download-video="definition.video?.download"
+    @download-video="handleDownloadVideo"
     @collect-article-data="collectArticleData"
   /><PreviewDialog />
 </template>
