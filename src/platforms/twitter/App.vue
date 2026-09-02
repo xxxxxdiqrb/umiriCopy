@@ -9,13 +9,14 @@ import ConfigBar from '../../shared/components/ConfigBar.vue';
 import { appState, refreshProvidersFromStorage } from '../../shared/store';
 import { usePlatformCopy } from '../../shared/composables/usePlatformCopy';
 import { platformState, configItems, updateConfig, observer, loadPlatformConfig } from './platform';
-import { copyTweet } from './composables/useCopyTweet';
+import { executeCopyPipeline } from '../../shared/copy/pipeline';
+import { twitterAdapter } from './adapter';
 import type { TranslationOptions } from '../../shared/utils';
-import type { TweetCopyOptions } from './composables/tweetMedia';
+import type { CopyPipelineOptions } from '../../shared/copy/types';
 import { handleDownloadVideo } from './composables/videoHandler';
-import { collectArticleData } from './composables/useCopyTweet';
+import { collectArticleData } from './collectors/tweetArticleCollector';
 
-function readTweetCopyOptions(): TweetCopyOptions {
+function readTweetCopyOptions(): CopyPipelineOptions {
   return {
     translate: platformState.configBar.translate,
     captureScreenshot: platformState.configBar.captureScreenshot,
@@ -42,7 +43,13 @@ const { handleCancel, handleSubmit, handleUpdateItem } = usePlatformCopy({
   getSelectedArticleElements: observer.getSelectedArticleElements,
   unmountAllSelectors: observer.unmountAllSelectors,
   copyArticles: (articles, reportLoadingText) =>
-    copyTweet(articles, readTweetCopyOptions(), readTranslationOptions(), reportLoadingText),
+    executeCopyPipeline(
+      articles,
+      twitterAdapter,
+      readTweetCopyOptions(),
+      readTranslationOptions(),
+      reportLoadingText,
+    ),
   validateBeforeSubmit: () => {
     if (platformState.configBar.translate) {
       const selectedProvider = appState.providers.find(
@@ -87,7 +94,7 @@ const collectSelectedArticleData = async () => {
       const articleData = await collectArticleData(article, {
         ...readTweetCopyOptions(),
         copyImages: true,
-        getAlt: false,
+        getAlt: true,
       });
       console.log('[tweetCopy] articleData', articleData);
     } catch (error) {
