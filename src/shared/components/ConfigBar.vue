@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ConfigItem } from '../types';
 import { computed } from 'vue';
+import ToggleButton from './ToggleButton.vue';
 
 const props = defineProps<{
   visible: boolean;
@@ -47,9 +48,13 @@ const handleSelectChange = (item: ConfigItem, event: Event) => {
       <template v-for="item in visibleItems" :key="item.key">
         <div v-if="item.type === 'toggle'" class="config-item">
           <span class="config-label">{{ item.label }}</span>
-          <button class="toggle-btn" :class="{ active: item.value }" @click="handleToggle(item)">
-            <span class="toggle-indicator"></span>
-          </button>
+          <ToggleButton
+            :active="Boolean(item.value)"
+            active-color="rgb(29, 155, 240)"
+            inactive-color="rgb(51, 54, 57)"
+            indicator-color="rgb(239, 243, 244)"
+            @click="handleToggle(item)"
+          />
         </div>
         <div v-else-if="item.type === 'select'" class="config-item">
           <span class="config-label">{{ item.label }}</span>
@@ -147,36 +152,6 @@ const handleSelectChange = (item: ConfigItem, event: Event) => {
   option {
     background-color: rgb(21, 22, 23);
     color: rgb(239, 243, 244);
-  }
-}
-
-.toggle-btn {
-  width: 44px;
-  height: 24px;
-  border-radius: 12px;
-  border: none;
-  background-color: rgb(51, 54, 57);
-  cursor: pointer;
-  position: relative;
-  transition: background-color 0.2s;
-
-  &.active {
-    background-color: rgb(29, 155, 240);
-  }
-}
-
-.toggle-indicator {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background-color: rgb(239, 243, 244);
-  transition: transform 0.2s;
-
-  .toggle-btn.active & {
-    transform: translateX(20px);
   }
 }
 

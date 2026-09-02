@@ -1,5 +1,6 @@
 ﻿<script setup lang="ts">
 import type { PlatformSettings, ProviderConfig } from '../types';
+import ToggleButton from '../../shared/components/ToggleButton.vue';
 
 const props = defineProps<{
   title: string;
@@ -46,14 +47,10 @@ const updateSetting = <K extends keyof PlatformSettings>(key: K, value: Platform
           <span class="setting-label">默认开启翻译</span>
           <span class="setting-desc">点击复制时默认启用 AI 翻译</span>
         </div>
-        <button
-          type="button"
-          class="toggle-btn"
-          :class="{ active: modelValue.translate }"
+        <ToggleButton
+          :active="modelValue.translate"
           @click="updateSetting('translate', !modelValue.translate)"
-        >
-          <span class="toggle-indicator"></span>
-        </button>
+        />
       </div>
 
       <!-- 默认翻译服务 -->
@@ -80,14 +77,10 @@ const updateSetting = <K extends keyof PlatformSettings>(key: K, value: Platform
           <span class="setting-label">默认截取原推文图片</span>
           <span class="setting-desc">生成推文视觉卡片并置入剪贴板</span>
         </div>
-        <button
-          type="button"
-          class="toggle-btn"
-          :class="{ active: modelValue.captureScreenshot }"
+        <ToggleButton
+          :active="modelValue.captureScreenshot"
           @click="updateSetting('captureScreenshot', !modelValue.captureScreenshot)"
-        >
-          <span class="toggle-indicator"></span>
-        </button>
+        />
       </div>
 
       <!-- 复制图片 -->
@@ -96,14 +89,10 @@ const updateSetting = <K extends keyof PlatformSettings>(key: K, value: Platform
           <span class="setting-label">默认复制图片</span>
           <span class="setting-desc">获取帖子附带的媒体图片</span>
         </div>
-        <button
-          type="button"
-          class="toggle-btn"
-          :class="{ active: modelValue.copyImages }"
+        <ToggleButton
+          :active="modelValue.copyImages"
           @click="updateSetting('copyImages', !modelValue.copyImages)"
-        >
-          <span class="toggle-indicator"></span>
-        </button>
+        />
       </div>
 
       <!-- 下载图片到本地 -->
@@ -112,14 +101,10 @@ const updateSetting = <K extends keyof PlatformSettings>(key: K, value: Platform
           <span class="setting-label">默认图片下载到本地</span>
           <span class="setting-desc">复制时将图片自动保存到浏览器下载目录</span>
         </div>
-        <button
-          type="button"
-          class="toggle-btn"
-          :class="{ active: modelValue.download }"
+        <ToggleButton
+          :active="modelValue.download"
           @click="updateSetting('download', !modelValue.download)"
-        >
-          <span class="toggle-indicator"></span>
-        </button>
+        />
       </div>
 
       <template v-if="hasAlt">
@@ -128,14 +113,10 @@ const updateSetting = <K extends keyof PlatformSettings>(key: K, value: Platform
             <span class="setting-label">默认获取 ALT</span>
             <span class="setting-desc">复制图片时同时获取图片说明文字</span>
           </div>
-          <button
-            type="button"
-            class="toggle-btn"
-            :class="{ active: modelValue.getAlt }"
+          <ToggleButton
+            :active="modelValue.getAlt"
             @click="updateSetting('getAlt', !modelValue.getAlt)"
-          >
-            <span class="toggle-indicator"></span>
-          </button>
+          />
         </div>
       </template>
     </div>
@@ -217,37 +198,6 @@ $accent: rgb(29, 155, 240);
 
   &:focus {
     border-color: $accent;
-  }
-}
-
-.toggle-btn {
-  width: 44px;
-  height: 24px;
-  border-radius: 12px;
-  border: none;
-  background-color: rgb(207, 217, 222);
-  cursor: pointer;
-  position: relative;
-  transition: background-color 0.2s;
-  flex-shrink: 0;
-
-  &.active {
-    background-color: $text-primary;
-  }
-}
-
-.toggle-indicator {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background-color: rgb(255, 255, 255);
-  transition: transform 0.2s;
-
-  .toggle-btn.active & {
-    transform: translateX(20px);
   }
 }
 </style>

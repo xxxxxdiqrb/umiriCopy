@@ -5,6 +5,7 @@ import { createDefaultProvider, DEFAULT_PLATFORM_CONFIGS, sanitizeOptionsData } 
 import ProviderCard from './components/ProviderCard.vue';
 import ProviderModal from './components/ProviderModal.vue';
 import PlatformSettingsCard from './components/PlatformSettingsCard.vue';
+import ToggleButton from '../shared/components/ToggleButton.vue';
 
 const activeTab = ref<'providers' | 'platforms'>('providers');
 
@@ -169,15 +170,12 @@ const handleImportFile = async (event: Event) => {
       <div class="header-actions">
         <label class="developer-option">
           开发者选项
-          <button
-            type="button"
-            class="toggle-btn"
-            :class="{ active: options.developerMode }"
+          <ToggleButton
+            class="developer-toggle"
+            :active="options.developerMode"
             title="开启后configBar中会出现额外选项"
             @click="toggleDeveloperMode"
-          >
-            <span class="toggle-indicator"></span>
-          </button>
+          />
         </label>
         <input
           ref="fileInputRef"
@@ -418,37 +416,8 @@ $accent-hover: rgb(26, 140, 216);
   align-items: center;
 }
 
-.toggle-btn {
-  position: relative;
-  flex: 0 0 auto;
-  width: 44px;
-  height: 24px;
-  padding: 0;
-  border: none;
-  border-radius: 12px;
-  background-color: #e9e9e9;
-  cursor: pointer;
-  transition: background-color 0.2s;
+.developer-toggle {
   margin-left: 12px;
-
-  &.active {
-    background-color: $text-primary;
-  }
-}
-
-.toggle-indicator {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background-color: white;
-  transition: transform 0.2s;
-
-  .toggle-btn.active & {
-    transform: translateX(20px);
-  }
 }
 
 .tabs {

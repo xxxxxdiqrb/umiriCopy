@@ -9,6 +9,7 @@ import {
 import { BATCH_TRANSLATION_SYSTEM_MESSAGE, JSON_SYSTEM_MESSAGE } from '../../shared/constants';
 import { requestLLM } from '../../shared/llm';
 import { TRANSLATION_JSON_SCHEMA } from '../../shared/llm/schemas';
+import ToggleButton from '../../shared/components/ToggleButton.vue';
 
 const props = defineProps<{
   modelValue: boolean;
@@ -294,15 +295,11 @@ defineExpose({ onOpen });
                 开启后合并提交多条文本；关闭时使用 Promise.all 逐条并发翻译。
               </p>
             </div>
-            <button
-              type="button"
-              class="toggle-btn"
-              :class="{ active: formData.batchTranslation }"
+            <ToggleButton
+              :active="formData.batchTranslation"
               title="开启后批量翻译多条推文时将合并为一个请求"
               @click="formData.batchTranslation = !formData.batchTranslation"
-            >
-              <span class="toggle-indicator"></span>
-            </button>
+            />
           </div>
         </div>
 
@@ -312,15 +309,11 @@ defineExpose({ onOpen });
             <div>
               <p class="field-description">使用 OpenAI 兼容的 response_format 参数约束批量输出。</p>
             </div>
-            <button
-              type="button"
-              class="toggle-btn"
-              :class="{ active: formData.enableJsonSchema }"
+            <ToggleButton
+              :active="formData.enableJsonSchema"
               title="启用 response_format (json_schema)，需要模型服务商支持"
               @click="formData.enableJsonSchema = !formData.enableJsonSchema"
-            >
-              <span class="toggle-indicator"></span>
-            </button>
+            />
           </div>
         </div>
 
@@ -539,38 +532,6 @@ $danger: rgb(244, 33, 46);
 
   .field-description {
     margin-bottom: 0;
-  }
-}
-
-.toggle-btn {
-  position: relative;
-  flex: 0 0 auto;
-  width: 44px;
-  height: 24px;
-  padding: 0;
-  border: none;
-  border-radius: 12px;
-  background-color: #bbb;
-  cursor: pointer;
-  transition: background-color 0.2s;
-
-  &.active {
-    background-color: $text-primary;
-  }
-}
-
-.toggle-indicator {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background-color: rgb(239, 243, 244);
-  transition: transform 0.2s;
-
-  .toggle-btn.active & {
-    transform: translateX(20px);
   }
 }
 
