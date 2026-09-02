@@ -17,8 +17,6 @@ export const { platformState, configItems, updateConfig, loadPlatformConfig } = 
 );
 
 export const observer = createArticleSelectorObserver({
-  prefix: 'instagram-copy',
-  articleIdPrefix: 'instagram-article',
   articleSelector: () => {
     if (document.querySelector('article[role="presentation"]')) {
       return 'article[role="presentation"]';

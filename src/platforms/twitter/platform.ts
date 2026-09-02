@@ -2,13 +2,12 @@ import { appState } from '../../shared/store';
 import { DEFAULT_PLATFORM_CONFIGS } from '../../options/types';
 import { createPlatform } from '../../shared/platform/createPlatform';
 import type { PlatformModule } from '../../shared/platform/types';
+import type { PlatformState } from '../../shared/composables/createPlatformStore';
 import { twitterAdapter } from './adapter';
 import { collectArticleData } from './collectors/articleCollector';
 import { collectTwitterVideos } from './collectors/videoCollector';
 
 const observerConfig = {
-  prefix: 'tweet-copy',
-  articleIdPrefix: 'article',
   articleSelector: 'article',
   getObserverTarget: () => {
     let currElement: HTMLElement | null = document.querySelector('article');
@@ -21,7 +20,7 @@ const observerConfig = {
   onObserverChange: () => {
     const currentArticleIds = new Set(
       Array.from(document.querySelectorAll('article'))
-        .map((article) => (article as HTMLElement).dataset.selectorId)
+        .map((article) => (article as HTMLElement).dataset.umiriSelectorId)
         .filter(Boolean),
     );
     for (const selectedId of appState.selectedArticles) {
@@ -30,7 +29,7 @@ const observerConfig = {
   },
 };
 
-const getOptions = (state: Parameters<NonNullable<PlatformModule['copy']>['getOptions']>[0]) => ({
+const getOptions = (state: PlatformState) => ({
   translate: state.configBar.translate,
   captureScreenshot: state.configBar.captureScreenshot,
   copyImages: state.configBar.copyImages,

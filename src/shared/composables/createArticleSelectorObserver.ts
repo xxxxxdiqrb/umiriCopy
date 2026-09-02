@@ -5,10 +5,10 @@ import ArticleSelector from '../components/ArticleSelector.vue';
 import { appState } from '../store';
 
 const BORDER_RADIUS = 12;
+const PLUGIN_PREFIX = 'umiri-copy';
+const ARTICLE_ID_DATA_KEY = 'umiriSelectorId';
 
 export interface ArticleObserverConfig {
-  prefix: string;
-  articleIdPrefix: string;
   articleSelector: string | (() => string);
   getObserverTarget(): HTMLElement | null;
   getAnchor?(article: HTMLElement): HTMLElement | null;
@@ -24,15 +24,7 @@ interface SelectorEntry {
 }
 
 export function createArticleSelectorObserver(config: ArticleObserverConfig) {
-  const {
-    prefix,
-    articleIdPrefix,
-    articleSelector,
-    getObserverTarget,
-    getAnchor,
-    onObserverChange,
-    singleSelect,
-  } = config;
+  const { articleSelector, getObserverTarget, getAnchor, onObserverChange, singleSelect } = config;
 
   const mountedSelectors: Map<string, SelectorEntry> = new Map();
   const borderElements: Map<string, HTMLElement> = new Map();
@@ -43,10 +35,10 @@ export function createArticleSelectorObserver(config: ArticleObserverConfig) {
   let resizeHandler: (() => void) | null = null;
 
   function getArticleId(article: HTMLElement): string {
-    if (!article.dataset.selectorId) {
-      article.dataset.selectorId = `${articleIdPrefix}-${++articleIdCounter}`;
+    if (!article.dataset[ARTICLE_ID_DATA_KEY]) {
+      article.dataset[ARTICLE_ID_DATA_KEY] = String(++articleIdCounter);
     }
-    return article.dataset.selectorId;
+    return article.dataset[ARTICLE_ID_DATA_KEY]!;
   }
 
   function createOverlay() {
@@ -55,7 +47,7 @@ export function createArticleSelectorObserver(config: ArticleObserverConfig) {
       `<div style="position: relative; width: 0; height: 0;"></div>`,
     );
     overlayElement = createElement<HTMLDivElement>(
-      `<div id="${prefix}-overlay" style="position: absolute; top: 0; left: 0; width: ${document.documentElement.scrollWidth}px; height: ${document.documentElement.scrollHeight}px; background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(10px); z-index: 999; pointer-events: auto; opacity: 0; transition: opacity 0.3s ease;"></div>`,
+      `<div id="${PLUGIN_PREFIX}-overlay" style="position: absolute; top: 0; left: 0; width: ${document.documentElement.scrollWidth}px; height: ${document.documentElement.scrollHeight}px; background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(10px); z-index: 999; pointer-events: auto; opacity: 0; transition: opacity 0.3s ease;"></div>`,
     );
     overlayHost.appendChild(overlayElement);
     document.body.insertBefore(overlayHost, document.body.firstChild);
@@ -119,12 +111,12 @@ export function createArticleSelectorObserver(config: ArticleObserverConfig) {
       if (border) updateBorderPosition(border, anchor);
     }
     const anchors = Array.from(mountedSelectors.values()).map((s) => s.anchor);
-    updateOverlayMask(prefix, overlayElement, anchors, BORDER_RADIUS);
+    updateOverlayMask(PLUGIN_PREFIX, overlayElement, anchors, BORDER_RADIUS);
   }
 
   function createBorderElement(article: HTMLElement, articleId: string): HTMLElement {
     const border = document.createElement('div');
-    border.className = `${prefix}-border`;
+    border.className = `${PLUGIN_PREFIX}-border`;
     border.style.cssText = `position: absolute; border-radius: ${BORDER_RADIUS}px; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 0 12px rgba(0,0,0,0.25); pointer-events: none; z-index: 1001;`;
     updateBorderPosition(border, article);
     overlayHost!.appendChild(border);
@@ -177,7 +169,7 @@ export function createArticleSelectorObserver(config: ArticleObserverConfig) {
     }
     if (overlayElement) {
       const anchors = Array.from(mountedSelectors.values()).map((s) => s.anchor);
-      updateOverlayMask(prefix, overlayElement, anchors, BORDER_RADIUS);
+      updateOverlayMask(PLUGIN_PREFIX, overlayElement, anchors, BORDER_RADIUS);
     }
   }
 
@@ -228,7 +220,7 @@ export function createArticleSelectorObserver(config: ArticleObserverConfig) {
 
     await removeOverlay();
 
-    removeOverlayMask(prefix);
+    removeOverlayMask(PLUGIN_PREFIX);
   }
 
   function getSelectedArticleElements(): HTMLElement[] {
