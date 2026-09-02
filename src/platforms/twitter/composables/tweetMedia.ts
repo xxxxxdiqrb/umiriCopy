@@ -7,7 +7,7 @@ import {
   toCopyStageError,
   type ProcessImageResult,
 } from '../../../shared/utils';
-import { extractTweetTextContent, getTweetTime, getTweetUserName } from '../utils';
+import { extractTweetTextContent, getTweetTime, getTweetUserScreenName } from '../utils';
 import { setVideoSize } from './videoHandler';
 
 const ORIG_IMAGE_PARAM = 'orig';
@@ -29,6 +29,7 @@ export interface ArticleImageData {
 
 export interface ArticleData {
   userName: string;
+  userScreenName: string;
   time: string;
   textContent: string;
   imageDataList: ArticleImageData[];
@@ -123,7 +124,7 @@ export async function collectArticleImageData(
   ).filter((item) => !item.querySelector('video'));
 
   const imageDataList: ArticleImageData[] = [];
-  const articleName = `${getTweetUserName(article)}_${formatDateForFilename(getTweetTime(article))}`;
+  const articleName = `${getTweetUserScreenName(article)}_${formatDateForFilename(getTweetTime(article))}`;
   for (const presentation of presentations) {
     const image = presentation.querySelector<HTMLImageElement>('img');
     if (image) {

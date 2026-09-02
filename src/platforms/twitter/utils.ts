@@ -13,6 +13,17 @@ export function extractTweetTextContent(tweetTextElement: HTMLElement): string {
   return textContent;
 }
 
+export function getTweetUserScreenName(article: HTMLElement): string {
+  const userInfoElement = article.querySelector(
+    'div[data-testid="User-Name"]',
+  ) as HTMLElement | null;
+  if (!userInfoElement) {
+    return 'unknown';
+  }
+  const userNameText = userInfoElement.children?.[1]?.textContent;
+  return userNameText || 'unknown';
+}
+
 export function getTweetUserName(article: HTMLElement): string {
   const userInfoElement = article.querySelector(
     'div[data-testid="User-Name"]',
@@ -20,7 +31,7 @@ export function getTweetUserName(article: HTMLElement): string {
   if (!userInfoElement) {
     return 'unknown';
   }
-  const userNameText = userInfoElement.children[0].textContent;
+  const userNameText = userInfoElement.children?.[0]?.textContent;
   const userNameElement = Array.from(userInfoElement.querySelectorAll('span')).find(
     (item) => item.textContent === userNameText,
   );

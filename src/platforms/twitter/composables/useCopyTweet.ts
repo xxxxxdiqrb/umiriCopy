@@ -9,7 +9,12 @@ import {
   waitATick,
 } from '../../../shared/utils';
 import type { LoadingTextReporter } from '../../../shared/composables/usePlatformCopy';
-import { extractTweetTextContent, getTweetTime, getTweetUserName } from '../utils';
+import {
+  extractTweetTextContent,
+  getTweetTime,
+  getTweetUserName,
+  getTweetUserScreenName,
+} from '../utils';
 import {
   captureArticleScreenshot,
   collectArticleImageData,
@@ -36,6 +41,7 @@ export async function collectArticleData(
 
   return {
     userName: getTweetUserName(article),
+    userScreenName: getTweetUserScreenName(article),
     time: getTweetTime(article).toISOString(),
     textContent,
     imageDataList: options.copyImages ? await collectArticleImageData(article, options.getAlt) : [],
