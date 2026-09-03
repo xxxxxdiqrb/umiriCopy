@@ -21,7 +21,10 @@ export function getTweetUserScreenName(article: HTMLElement): string {
     return 'unknown';
   }
   const userNameText = userInfoElement.children?.[1]?.textContent;
-  return userNameText || 'unknown';
+  if (typeof userNameText !== 'string') {
+    return 'unknown';
+  }
+  return userNameText.split('·')[0];
 }
 
 export function getTweetUserName(article: HTMLElement): string {
