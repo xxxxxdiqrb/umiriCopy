@@ -17,16 +17,6 @@ const observerConfig = {
     }
     return null;
   },
-  onObserverChange: () => {
-    const currentArticleIds = new Set(
-      Array.from(document.querySelectorAll('article'))
-        .map((article) => (article as HTMLElement).dataset.umiriSelectorId)
-        .filter(Boolean),
-    );
-    for (const selectedId of appState.selectedArticles) {
-      if (!currentArticleIds.has(selectedId)) appState.selectedArticles.delete(selectedId);
-    }
-  },
 };
 
 const getOptions = (state: PlatformState) => ({

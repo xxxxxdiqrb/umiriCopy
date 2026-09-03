@@ -12,7 +12,6 @@ export interface ArticleObserverConfig {
   articleSelector: string | (() => string);
   getObserverTarget(): HTMLElement | null;
   getAnchor?(article: HTMLElement): HTMLElement | null;
-  onObserverChange?(): void;
   singleSelect?: boolean;
 }
 
@@ -24,7 +23,7 @@ interface SelectorEntry {
 }
 
 export function createArticleSelectorObserver(config: ArticleObserverConfig) {
-  const { articleSelector, getObserverTarget, getAnchor, onObserverChange, singleSelect } = config;
+  const { articleSelector, getObserverTarget, getAnchor, singleSelect } = config;
 
   const mountedSelectors: Map<string, SelectorEntry> = new Map();
   const borderElements: Map<string, HTMLElement> = new Map();
@@ -173,14 +172,21 @@ export function createArticleSelectorObserver(config: ArticleObserverConfig) {
     }
   }
 
+  function reconcileSelectedArticles() {
+    const mountedIds = new Set(mountedSelectors.keys());
+    for (const selectedId of appState.selectedArticles) {
+      if (!mountedIds.has(selectedId)) appState.selectedArticles.delete(selectedId);
+    }
+  }
+
   function addObserver() {
     const target = getObserverTarget();
     if (!target) return;
 
     const observer = new MutationObserver(() => {
       mountNewArticles();
+      reconcileSelectedArticles();
       updateAllSelectorPositions();
-      onObserverChange?.();
     });
     observer.observe(target, { childList: true });
     activeObservers.push(observer);
