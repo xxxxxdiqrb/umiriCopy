@@ -4,9 +4,10 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { collectArticleData } from '../../src/platforms/twitter/collectors/articleCollector';
-import type { ArticleData, CopyPipelineOptions } from '../../src/shared/copy/types';
+import type { ArticleData } from '../../src/shared/copy/types';
 
 interface TwitterCase {
+  description?: string;
   url: string;
   articleData: ArticleData;
 }
@@ -19,34 +20,48 @@ const fixtureDirectory = resolve(process.cwd(), 'test/fixtures/twitter');
 const casesPath = resolve(fixtureDirectory, 'cases.json');
 const snapshotPath = resolve(fixtureDirectory, 'articles.snapshot.json');
 
-const options: CopyPipelineOptions = {
-  translate: false,
-  captureScreenshot: false,
-  copyImages: false,
-  getAlt: false,
-  download: false,
-  suffix: '',
+const options = {
+  copyImages: true,
+  getAlt: true,
 };
 
-function loadFixtures(): { cases: TwitterCase[]; snapshots: TwitterSnapshot[] } | null {
+function readJson(path: string, description: string): unknown {
   try {
-    const cases = JSON.parse(readFileSync(casesPath, 'utf8')).cases as TwitterCase[];
-    const snapshots = JSON.parse(readFileSync(snapshotPath, 'utf8')).snapshots as TwitterSnapshot[];
-    return { cases, snapshots };
-  } catch {
-    return null;
+    return JSON.parse(readFileSync(path, 'utf8'));
+  } catch (error) {
+    throw new Error(
+      `Unable to read ${description} at ${path}. Run \`npm run capture:twitter\` first if the snapshot is missing.`,
+      { cause: error },
+    );
   }
+}
+
+function loadFixtures(): { cases: TwitterCase[]; snapshots: TwitterSnapshot[] } {
+  const cases = readJson(casesPath, 'Twitter cases') as TwitterCase[];
+  const snapshots = (
+    readJson(snapshotPath, 'Twitter article snapshot') as {
+      snapshots?: TwitterSnapshot[];
+    }
+  ).snapshots;
+
+  if (!Array.isArray(cases) || cases.some((item) => !item?.url || !item.articleData)) {
+    throw new Error(`${casesPath} must contain an array of Twitter cases`);
+  }
+  if (!Array.isArray(snapshots)) {
+    throw new Error(`${snapshotPath} must contain a snapshots array`);
+  }
+
+  return { cases, snapshots };
 }
 
 describe('collectArticleData with captured Twitter articles', () => {
   const fixtures = loadFixtures();
-  it.skipIf(!fixtures)('requires local cases.json and articles.snapshot.json', () => {});
 
-  for (const testCase of fixtures?.cases ?? []) {
-    it(`collects ${testCase.url}`, async () => {
-      const snapshot = fixtures!.snapshots.find((item) => item.url === testCase.url);
+  for (const testCase of fixtures.cases) {
+    it(`${testCase.description ?? testCase.url}: ${testCase.url}`, async () => {
+      const snapshot = fixtures.snapshots.find((item) => item.url === testCase.url);
       expect(snapshot, `missing snapshot for ${testCase.url}`).toBeDefined();
-      document.body.innerHTML = snapshot!.html;
+      document.body.innerHTML = snapshot?.html ?? '';
       const article = document.querySelector<HTMLElement>('article');
       expect(article, 'snapshot must contain an article element').not.toBeNull();
       globalThis.requestAnimationFrame = (callback: FrameRequestCallback) => {

@@ -9,6 +9,7 @@ test/fixtures/**
 !test/fixtures/twitter/
 !test/fixtures/twitter/.gitkeep
 !test/fixtures/twitter/cases.json
+!test/fixtures/twitter/articles.snapshot.json
 .opencode/
 .DS_Store
 devDocs/

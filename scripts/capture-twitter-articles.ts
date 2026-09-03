@@ -18,7 +18,7 @@ const projectRoot = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const fixtureDir = resolve(projectRoot, 'test/fixtures/twitter');
 const casesPath = resolve(fixtureDir, 'cases.json');
 const snapshotPath = resolve(fixtureDir, 'articles.snapshot.json');
-const DEFAULT_DELAY_MS = 1000;
+const DEFAULT_DELAY_MS = 500;
 
 function getDelayMs(): number {
   const rawValue = process.env.TWITTER_CAPTURE_DELAY_MS;
@@ -45,6 +45,11 @@ function requireEnv(name: string): string {
   return value;
 }
 
+function getTwitterProxy(): { server: string } | undefined {
+  const server = process.env.TWITTER_PROXY_SERVER?.trim();
+  return server ? { server } : undefined;
+}
+
 async function loadCases(): Promise<TwitterCase[]> {
   let parsed: unknown;
   try {
@@ -52,11 +57,9 @@ async function loadCases(): Promise<TwitterCase[]> {
   } catch {
     throw new Error(`Missing ${casesPath}; create it with url and expected articleData entries`);
   }
-  const cases = (parsed as { cases?: TwitterCase[] })?.cases;
+  const cases = parsed as TwitterCase[];
   if (!Array.isArray(cases) || cases.some((item) => !item?.url || !item.articleData)) {
-    throw new Error(
-      `${casesPath} must contain { "cases": [{ "url": string, "articleData": object }] }`,
-    );
+    throw new Error(`${casesPath} must contain [{ "url": string, "articleData": object }]`);
   }
   const requestedUrl = getOption('--url');
   const requestedIndex = getOption('--index');
@@ -74,12 +77,7 @@ async function captureArticle(page: Page, testCase: TwitterCase): Promise<Twitte
   console.log(`Opening ${testCase.url}`);
   await page.goto(testCase.url, { waitUntil: 'domcontentloaded', timeout: 60_000 });
   const article = page.locator('article').first();
-  await article.waitFor({ state: 'attached', timeout: 30_000 });
-  const showMore = article.locator('button[data-testid="tweet-text-show-more-link"]');
-  if (await showMore.count()) {
-    await showMore.first().click();
-    await page.waitForTimeout(300);
-  }
+  await article.waitFor({ state: 'visible', timeout: 30_000 });
   const html = await article.evaluate((element) => element.outerHTML);
   return { url: testCase.url, html };
 }
@@ -90,7 +88,7 @@ async function main(): Promise<void> {
   const delayMs = getDelayMs();
   const cases = await loadCases();
   if (cases.length === 0) throw new Error('No matching Twitter cases found');
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: true, proxy: getTwitterProxy() });
   try {
     const context = await browser.newContext();
     await context.addCookies([
