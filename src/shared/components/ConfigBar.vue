@@ -94,7 +94,7 @@ const handleSelectChange = (item: ConfigItem, event: Event) => {
   z-index: 19998;
   display: flex;
   justify-content: center;
-  width: fit-content;
+  width: 300px;
   height: fit-content;
 }
 
