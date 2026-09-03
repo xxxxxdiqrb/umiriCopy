@@ -2,6 +2,12 @@ import { formatDateForFilename } from '../../../shared/utils';
 import type { ArticleImageData } from '../../../shared/copy/types';
 import { getTweetTime, getTweetUserScreenName } from '../utils';
 
+function setImageQuality(url: string, quality: string): string {
+  const urlObj = new URL(url);
+  urlObj.searchParams.set('name', quality);
+  return urlObj.toString();
+}
+
 export async function collectArticleImageData(
   article: HTMLElement,
   includeAlt: boolean,
@@ -17,7 +23,7 @@ export async function collectArticleImageData(
     const imageLink = imageLinks[index];
     const image = imageLink.querySelector<HTMLImageElement>('img');
     if (!image) continue;
-    const url = image.src;
+    const url = setImageQuality(image.src, 'orig');
     const path = new URL(url).pathname.split('/').pop() || `image_${index + 1}`;
     const imageName = `${articleName}_${path}.jpg`;
     const hasAltNode = Array.from(imageLink.parentElement?.querySelectorAll('span') || []).some(
