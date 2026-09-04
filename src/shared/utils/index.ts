@@ -240,6 +240,18 @@ export function formatDateForFilename(date: Date): string {
   // return date.toLocaleString().split('/').join('-').split(':').join('');
 }
 
+/** Build a consistent media filename shared by all platforms. */
+export function buildFileName(
+  userName: string,
+  date: Date,
+  fileName: string,
+  fileExtension: string,
+): string {
+  const normalizedUserName = userName.startsWith('@') ? userName : `@${userName}`;
+  const extension = fileExtension.replace(/^\./, '');
+  return `${normalizedUserName}_${formatDateForFilename(date)}_${fileName}.${extension}`;
+}
+
 export async function getBase64Image(url: string): Promise<string> {
   return new Promise((resolve, reject) => {
     chrome.runtime.sendMessage({ type: 'fetchImageAsBase64', url }, (response) => {

@@ -1,5 +1,5 @@
 import {
-  formatDateForFilename,
+  buildFileName,
   composeCopyContent,
   type ProcessImageResult,
   toCopyStageError,
@@ -86,7 +86,12 @@ export async function executeCopyPipeline(
       const base64 = await adapter.captureScreenshot(articles);
       const first = articleDataList[0];
       const name = first
-        ? `${first.userName}_${formatDateForFilename(new Date(first.time))}_${adapter.platform}Screenshot.jpg`
+        ? buildFileName(
+            first.userName,
+            new Date(first.time),
+            `${adapter.platform}Screenshot`,
+            'jpg',
+          )
         : `${adapter.platform}Screenshot.jpg`;
       screenshot = await processScreenshot(base64, name, options.download);
     } catch (error) {

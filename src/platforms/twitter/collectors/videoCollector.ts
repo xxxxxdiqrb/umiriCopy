@@ -1,5 +1,5 @@
 import { getTweetDetail, type TweetMedia } from '../services/twitterApi';
-import { formatDateForFilename } from '../../../shared/utils';
+import { buildFileName } from '../../../shared/utils';
 import type { VideoDownloadResource } from '../../../shared/composables/useVideoDownload';
 
 const filenameFromUrl = (url: string) => url.split('?')[0].split('/').pop() || 'video.mp4';
@@ -17,7 +17,20 @@ export async function collectTwitterVideos(article: HTMLElement): Promise<VideoD
         ? [
             {
               url: m.videoUrl,
-              fileName: `@${detail.user.screenName}_${formatDateForFilename(new Date(detail.createdAt))}_${filenameFromUrl(m.videoUrl)}`,
+              fileName: (() => {
+                const sourceName = filenameFromUrl(m.videoUrl);
+                const extensionMatch = sourceName.match(/\.([^.]+)$/);
+                const fileExtension = extensionMatch?.[1] || 'mp4';
+                const fileName = extensionMatch
+                  ? sourceName.slice(0, -extensionMatch[0].length)
+                  : sourceName;
+                return buildFileName(
+                  detail.user.screenName,
+                  new Date(detail.createdAt),
+                  fileName,
+                  fileExtension,
+                );
+              })(),
             },
           ]
         : [],

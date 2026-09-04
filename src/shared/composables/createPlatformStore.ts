@@ -71,7 +71,7 @@ export function createPlatformStore(options: PlatformStoreOptions) {
   });
 
   async function loadPlatformConfig() {
-    const settings = await getPlatformSettingsFromStorage(platform);
+    const settings = await getPlatformSettingsFromStorage(platform, fallback);
     platformState.configBar.translate = settings.translate;
     platformState.configBar.copyImages = settings.copyImages;
     platformState.configBar.download = settings.download;

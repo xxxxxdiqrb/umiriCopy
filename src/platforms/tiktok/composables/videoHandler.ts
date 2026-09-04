@@ -1,4 +1,4 @@
-import { downloadVideoWithProgress } from '../../../shared/utils';
+import { buildFileName, downloadVideoWithProgress } from '../../../shared/utils';
 import {
   showDownloadError,
   createProgressCallback,
@@ -12,14 +12,6 @@ interface TikTokVideoInfo {
   nickname: string;
   createTime: number;
   videoId: string;
-}
-
-function formatTikTokDate(timestamp: number): string {
-  const date = new Date(timestamp * 1000);
-  const year = date.getFullYear();
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
-  return `${year}-${month}-${day}`;
 }
 
 async function getTikTokVideoInfo(url: string): Promise<TikTokVideoInfo> {
@@ -54,8 +46,12 @@ export async function handleDownloadVideo(): Promise<void> {
     showLoadingWithText('正在获取视频信息...');
 
     const info = await getTikTokVideoInfo(window.location.href);
-    const postDate = formatTikTokDate(info.createTime);
-    const filename = `${info.username}_${postDate}_${info.videoId}.mp4`;
+    const filename = buildFileName(
+      info.username,
+      new Date(info.createTime * 1000),
+      info.videoId,
+      'mp4',
+    );
 
     await downloadVideoWithProgress(
       info.videoUrl,
